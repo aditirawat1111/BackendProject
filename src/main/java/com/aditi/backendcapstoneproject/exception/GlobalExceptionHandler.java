@@ -1,7 +1,10 @@
 package com.aditi.backendcapstoneproject.exception;
 
 import com.aditi.backendcapstoneproject.dto.ErrorResponseDto;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
@@ -17,11 +20,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ProductNotFoundException.class)
-    public ErrorResponseDto HandlingProductNotFoundException(ProductNotFoundException productNotFoundException){
+    public ResponseEntity<ErrorResponseDto> HandlingProductNotFoundException(ProductNotFoundException productNotFoundException){
         ErrorResponseDto errorResponseDto=new ErrorResponseDto();
         errorResponseDto.setStatus("Product Not Found");
         errorResponseDto.setMessage(productNotFoundException.getMessage());
 
-        return errorResponseDto;
+        ResponseEntity<ErrorResponseDto> responseEntity=
+                new ResponseEntity(errorResponseDto, HttpStatus.NOT_FOUND);
+
+        return responseEntity;
     }
 }

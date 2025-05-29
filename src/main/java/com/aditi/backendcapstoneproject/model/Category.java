@@ -1,27 +1,20 @@
 package com.aditi.backendcapstoneproject.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
-public class Category {
-    private long id;
-    private String name;
+@Entity
+public class Category extends BaseModel{
 
-    public long getId() {
-        return this.id;
-    }
+    private String description;
 
-    public String getName() {
-        return this.name;
-    }
+    @OneToMany(mappedBy = "category")
+    private List<Product> productList;
 
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 }
