@@ -1,7 +1,6 @@
 package com.aditi.backendcapstoneproject.controller;
 
-import com.aditi.backendcapstoneproject.dto.CreateFakeStoreProductDto;
-import com.aditi.backendcapstoneproject.dto.ErrorResponseDto;
+import com.aditi.backendcapstoneproject.dto.ProductRequestDto;
 import com.aditi.backendcapstoneproject.dto.ProductResponseDto;
 import com.aditi.backendcapstoneproject.exception.ProductNotFoundException;
 import com.aditi.backendcapstoneproject.model.Product;
@@ -11,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,16 +56,35 @@ public class ProductController {
 
 
     @PostMapping("/products")
-    public ProductResponseDto createProduct(@RequestBody CreateFakeStoreProductDto createFakeStoreProductDto) {
+    public ProductResponseDto createProduct(@RequestBody ProductRequestDto productRequestDto) {
 
-        Product product=productService.createProduct(createFakeStoreProductDto.getName(),
-                createFakeStoreProductDto.getDescription(),
-                createFakeStoreProductDto.getCategory(),
-                createFakeStoreProductDto.getPrice(),
-                createFakeStoreProductDto.getImageUrl());
+        Product product=productService.createProduct(productRequestDto.getName(),
+                productRequestDto.getDescription(),
+                productRequestDto.getCategory(),
+                productRequestDto.getPrice(),
+                productRequestDto.getImageUrl());
 
         ProductResponseDto productResponseDto=ProductResponseDto.from(product);
         return productResponseDto;
     }
 
+
+    @PutMapping("/products/{id}")
+    public ProductResponseDto updateProduct(@PathVariable long id,  @RequestBody  ProductRequestDto productRequestDto){
+        Product product=productService.updateProduct(id, productRequestDto);
+        ProductResponseDto productResponseDto=ProductResponseDto.from(product);
+        return productResponseDto;
+    }
+
+
+    @PatchMapping("/products/{id}")
+    public ResponseEntity<ProductResponseDto> partialUpdateProduct
+            (@PathVariable Long id
+                    ,@RequestBody ProductRequestDto productRequestDto) throws ProductNotFoundException {
+
+        Product updateProduct=productService.partialUpdateProduct(id, productRequestDto);
+        ProductResponseDto productResponseDto=ProductResponseDto.from(updateProduct);
+
+        return new ResponseEntity<>(productResponseDto, HttpStatus.OK);
+    }
 }

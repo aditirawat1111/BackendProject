@@ -2,6 +2,7 @@ package com.aditi.backendcapstoneproject.service;
 
 import com.aditi.backendcapstoneproject.dto.FakeStoreProductDto;
 import com.aditi.backendcapstoneproject.dto.FakeStoreProductRequestDto;
+import com.aditi.backendcapstoneproject.dto.ProductRequestDto;
 import com.aditi.backendcapstoneproject.exception.ProductNotFoundException;
 import com.aditi.backendcapstoneproject.model.Product;
 import org.springframework.stereotype.Service;
@@ -20,7 +21,7 @@ public class FakeStoreProductService implements ProductService{
     }
 
     @Override
-    public Product getProductsById(long id) throws ProductNotFoundException {
+    public Product getProductsById(Long id) throws ProductNotFoundException {
         FakeStoreProductDto fakeStoreProductDto=restTemplate.getForObject(
                 "https://fakestoreapi.com/products/" + id, FakeStoreProductDto.class);
 
@@ -61,5 +62,15 @@ public class FakeStoreProductService implements ProductService{
                 fakeStoreProductRequestDto, FakeStoreProductDto.class);
 
         return fakeStoreProductDto.toProduct();
+    }
+
+    @Override
+    public Product updateProduct(Long id, ProductRequestDto productRequestDto) {
+        return null;
+    }
+
+    @Override
+    public Product partialUpdateProduct(Long id, ProductRequestDto productRequestDto) {
+        return null;
     }
 }

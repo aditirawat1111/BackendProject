@@ -1,5 +1,6 @@
 package com.aditi.backendcapstoneproject.service;
 
+import com.aditi.backendcapstoneproject.dto.ProductRequestDto;
 import com.aditi.backendcapstoneproject.exception.ProductNotFoundException;
 import com.aditi.backendcapstoneproject.model.Category;
 import com.aditi.backendcapstoneproject.model.Product;
@@ -23,7 +24,7 @@ public class ProductDBService implements ProductService {
     }
 
     @Override
-    public Product getProductsById(long id) throws ProductNotFoundException {
+    public Product getProductsById(Long id) throws ProductNotFoundException {
         Optional<Product> optionalProduct=productRepository.findById(id);
         if(optionalProduct.isEmpty()){
             throw new ProductNotFoundException("The product with id " + id + " is not found");
@@ -50,6 +51,45 @@ public class ProductDBService implements ProductService {
         return productRepository.save(product);
 
     }
+
+    @Override
+    public Product updateProduct(Long id, ProductRequestDto productRequestDto) {
+        Product product=new Product();
+        product.setId(id);
+        product.setName(productRequestDto.getName());
+        product.setDescription(productRequestDto.getDescription());
+        product.setPrice(productRequestDto.getPrice());
+        product.setImageUrl(productRequestDto.getImageUrl());
+
+        Category category1=getCategoryFromDB(productRequestDto.getCategory());
+        product.setCategory(category1);
+        return productRepository.save(product);
+    }
+
+    @Override
+    public Product partialUpdateProduct(Long id, ProductRequestDto productRequestDto) throws ProductNotFoundException {
+        Product product=productRepository.findById(id)
+                .orElseThrow(()-> new ProductNotFoundException("The Product with id "+id+" doesn't exist."));
+
+        if(productRequestDto.getName()!=null && !productRequestDto.getName().equals(product.getName())){
+            product.setName(productRequestDto.getName());
+        }
+        if(productRequestDto.getDescription()!=null && !productRequestDto.getDescription().equals(product.getDescription())){
+            product.setDescription(productRequestDto.getDescription());
+        }
+        if(productRequestDto.getPrice()!=0 && productRequestDto.getPrice()!=(product.getPrice())){
+            product.setPrice(productRequestDto.getPrice());
+        }
+        if(productRequestDto.getImageUrl()!=null && productRequestDto.getImageUrl().equals(product.getImageUrl())){
+            product.setImageUrl(productRequestDto.getImageUrl());
+        }
+        if(productRequestDto.getCategory()!=null && !productRequestDto.getCategory().equals(product.getCategory().getName())) {
+            Category category = getCategoryFromDB(productRequestDto.getCategory());
+            product.setCategory(category);
+        }
+        return productRepository.save(product);
+    }
+
 
     public Category getCategoryFromDB(String name){
         Optional<Category> optionalCategory = categoryRepository.findByName(name);
