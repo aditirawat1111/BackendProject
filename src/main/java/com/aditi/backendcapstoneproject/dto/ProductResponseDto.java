@@ -12,7 +12,7 @@ public class ProductResponseDto {
     private String name;
     private String description;
     private String imageUrl;
-    private double price;
+    private Double price;
     private String category;
 
     public static ProductResponseDto from(Product product) {

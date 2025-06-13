@@ -6,7 +6,6 @@ import com.aditi.backendcapstoneproject.model.Category;
 import com.aditi.backendcapstoneproject.model.Product;
 import com.aditi.backendcapstoneproject.repository.CategoryRepository;
 import com.aditi.backendcapstoneproject.repository.ProductRepository;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -53,12 +52,14 @@ public class ProductDBService implements ProductService {
     }
 
     @Override
-    public Product updateProduct(Long id, ProductRequestDto productRequestDto) {
-        Product product=new Product();
-        product.setId(id);
+    public Product updateProduct(Long id, ProductRequestDto productRequestDto) throws ProductNotFoundException {
+        Product product=productRepository.findById(id)
+                .orElseThrow(()->new ProductNotFoundException("The Product with id "+id+" doesn't exist"));
+
         product.setName(productRequestDto.getName());
         product.setDescription(productRequestDto.getDescription());
-        product.setPrice(productRequestDto.getPrice());
+
+        product.setPrice(productRequestDto.getPrice()!=null ? productRequestDto.getPrice() : 0.0);
         product.setImageUrl(productRequestDto.getImageUrl());
 
         Category category1=getCategoryFromDB(productRequestDto.getCategory());
@@ -69,7 +70,7 @@ public class ProductDBService implements ProductService {
     @Override
     public Product partialUpdateProduct(Long id, ProductRequestDto productRequestDto) throws ProductNotFoundException {
         Product product=productRepository.findById(id)
-                .orElseThrow(()-> new ProductNotFoundException("The Product with id "+id+" doesn't exist."));
+                .orElseThrow(()-> new ProductNotFoundException("The Product with id "+id+" doesn't exist"));
 
         if(productRequestDto.getName()!=null && !productRequestDto.getName().equals(product.getName())){
             product.setName(productRequestDto.getName());

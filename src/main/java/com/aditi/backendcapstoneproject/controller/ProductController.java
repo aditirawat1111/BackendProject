@@ -30,12 +30,11 @@ public class ProductController {
         Product product=productService.getProductsById(id);
         ProductResponseDto productResponseDto=ProductResponseDto.from(product);
 
-        ResponseEntity<ProductResponseDto> responseEntity=new ResponseEntity(productResponseDto, HttpStatus.OK);
-        return responseEntity;
+        return new ResponseEntity(productResponseDto, HttpStatus.OK);
     }
 
 
-    @GetMapping("/products/")
+    @GetMapping("/products")
     public ResponseEntity<List<ProductResponseDto>> getAllProducts(){
 
         List<Product> products = productService.getAllProducts();
@@ -45,17 +44,17 @@ public class ProductController {
                 products.stream()
                         .map(ProductResponseDto::from)
                         .collect(Collectors.toList());
+
 //        for(Product product: products){
 //            ProductResponseDto productResponseDto=ProductResponseDto.from(product);
 //            productResponseDtos.add(productResponseDto);
 //        }
 
-        ResponseEntity<List<ProductResponseDto>> responseEntity=new ResponseEntity(productResponseDtos, HttpStatus.ACCEPTED);
-        return responseEntity;
+        return new ResponseEntity(productResponseDtos, HttpStatus.ACCEPTED);
     }
 
 
-    @PostMapping("/products")
+    @PostMapping("/products/")
     public ProductResponseDto createProduct(@RequestBody ProductRequestDto productRequestDto) {
 
         Product product=productService.createProduct(productRequestDto.getName(),
@@ -70,7 +69,7 @@ public class ProductController {
 
 
     @PutMapping("/products/{id}")
-    public ProductResponseDto updateProduct(@PathVariable long id,  @RequestBody  ProductRequestDto productRequestDto){
+    public ProductResponseDto updateProduct(@PathVariable long id,  @RequestBody  ProductRequestDto productRequestDto) throws ProductNotFoundException{
         Product product=productService.updateProduct(id, productRequestDto);
         ProductResponseDto productResponseDto=ProductResponseDto.from(product);
         return productResponseDto;
