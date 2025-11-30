@@ -2,9 +2,12 @@ package com.aditi.backendcapstoneproject.service;
 
 import com.aditi.backendcapstoneproject.dto.AuthResponseDto;
 import com.aditi.backendcapstoneproject.dto.LoginRequestDto;
+import com.aditi.backendcapstoneproject.dto.ProfileResponseDto;
 import com.aditi.backendcapstoneproject.dto.RegisterRequestDto;
+import com.aditi.backendcapstoneproject.dto.UpdateProfileRequestDto;
 import com.aditi.backendcapstoneproject.exception.InvalidCredentialsException;
 import com.aditi.backendcapstoneproject.exception.UserAlreadyExistsException;
+import com.aditi.backendcapstoneproject.exception.UserNotFoundException;
 import com.aditi.backendcapstoneproject.model.User;
 import com.aditi.backendcapstoneproject.repository.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -109,6 +112,32 @@ public class AuthenticationService {
         } catch (org.springframework.security.authentication.BadCredentialsException e) {
             throw new InvalidCredentialsException("Invalid email or password");
         }
+    }
+
+    public ProfileResponseDto getProfile(String email) throws UserNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+        return ProfileResponseDto.from(user);
+    }
+
+    public ProfileResponseDto updateProfile(String email, UpdateProfileRequestDto request) throws UserNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        // Update only provided fields
+        if (request.getName() != null && !request.getName().isEmpty()) {
+            user.setName(request.getName());
+        }
+        if (request.getPhoneNumber() != null) {
+            user.setPhoneNumber(request.getPhoneNumber());
+        }
+        if (request.getAddress() != null) {
+            user.setAddress(request.getAddress());
+        }
+        user.setLastModified(new Date());
+
+        User updatedUser = userRepository.save(user);
+        return ProfileResponseDto.from(updatedUser);
     }
 }
 
