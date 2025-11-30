@@ -29,4 +29,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     //Native Queries
     @Query(value=CustomQuery.GET_PRODUCT_FROM_CATEGORY_NAME, nativeQuery = true)
     List<Product> getProductByCategoryNameNative(@Param("categoryName") String categoryName);
+
+    //Search Queries
+    @Query("select p from Product p where lower(p.name) like lower(concat('%', :keyword, '%')) or lower(p.description) like lower(concat('%', :keyword, '%'))")
+    List<Product> searchProducts(@Param("keyword") String keyword);
 }

@@ -92,6 +92,14 @@ public class ProductDBService implements ProductService {
     }
 
 
+    @Override
+    public List<Product> searchProducts(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return productRepository.findAll();
+        }
+        return productRepository.searchProducts(keyword.trim());
+    }
+
     public Category getCategoryFromDB(String name){
         Optional<Category> optionalCategory = categoryRepository.findByName(name);
         if(optionalCategory.isPresent()){

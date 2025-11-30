@@ -53,6 +53,24 @@ public class ProductController {
         return new ResponseEntity(productResponseDtos, HttpStatus.ACCEPTED);
     }
 
+    @GetMapping("/products/search")
+    public ResponseEntity<List<ProductResponseDto>> searchProducts(@RequestParam(required = false) String q) {
+
+        List<Product> products;
+        if (q == null || q.trim().isEmpty()) {
+            products = productService.getAllProducts();
+        } else {
+            products = productService.searchProducts(q);
+        }
+
+        List<ProductResponseDto> productResponseDtos =
+                products.stream()
+                        .map(ProductResponseDto::from)
+                        .collect(Collectors.toList());
+
+        return new ResponseEntity<>(productResponseDtos, HttpStatus.OK);
+    }
+
 
     @PostMapping("/products/")
     public ProductResponseDto createProduct(@RequestBody ProductRequestDto productRequestDto) {

@@ -73,4 +73,20 @@ public class FakeStoreProductService implements ProductService{
     public Product partialUpdateProduct(Long id, ProductRequestDto productRequestDto) {
         return null;
     }
+
+    @Override
+    public List<Product> searchProducts(String keyword) {
+        List<Product> allProducts = getAllProducts();
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return allProducts;
+        }
+        
+        String lowerKeyword = keyword.toLowerCase().trim();
+        return allProducts.stream()
+                .filter(product -> 
+                    (product.getName() != null && product.getName().toLowerCase().contains(lowerKeyword)) ||
+                    (product.getDescription() != null && product.getDescription().toLowerCase().contains(lowerKeyword))
+                )
+                .toList();
+    }
 }
