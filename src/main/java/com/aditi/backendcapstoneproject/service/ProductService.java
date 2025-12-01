@@ -1,6 +1,5 @@
 package com.aditi.backendcapstoneproject.service;
 
-import com.aditi.backendcapstoneproject.dto.FakeStoreProductDto;
 import com.aditi.backendcapstoneproject.dto.ProductRequestDto;
 import com.aditi.backendcapstoneproject.exception.ProductNotFoundException;
 import com.aditi.backendcapstoneproject.model.Product;
