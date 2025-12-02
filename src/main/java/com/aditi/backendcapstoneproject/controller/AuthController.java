@@ -1,11 +1,15 @@
 package com.aditi.backendcapstoneproject.controller;
 
 import com.aditi.backendcapstoneproject.dto.AuthResponseDto;
+import com.aditi.backendcapstoneproject.dto.ForgotPasswordRequestDto;
 import com.aditi.backendcapstoneproject.dto.LoginRequestDto;
+import com.aditi.backendcapstoneproject.dto.PasswordResetRequestDto;
+import com.aditi.backendcapstoneproject.dto.PasswordResetTokenResponseDto;
 import com.aditi.backendcapstoneproject.dto.ProfileResponseDto;
 import com.aditi.backendcapstoneproject.dto.RegisterRequestDto;
 import com.aditi.backendcapstoneproject.dto.UpdateProfileRequestDto;
 import com.aditi.backendcapstoneproject.exception.InvalidCredentialsException;
+import com.aditi.backendcapstoneproject.exception.InvalidPasswordResetTokenException;
 import com.aditi.backendcapstoneproject.exception.UserAlreadyExistsException;
 import com.aditi.backendcapstoneproject.exception.UserNotFoundException;
 import com.aditi.backendcapstoneproject.service.AuthenticationService;
@@ -43,6 +47,22 @@ public class AuthController {
             throws InvalidCredentialsException {
         AuthResponseDto response = authenticationService.login(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<PasswordResetTokenResponseDto> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequestDto request)
+            throws UserNotFoundException {
+        PasswordResetTokenResponseDto response = authenticationService.requestPasswordReset(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(
+            @Valid @RequestBody PasswordResetRequestDto request)
+            throws InvalidPasswordResetTokenException {
+        authenticationService.resetPassword(request);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @GetMapping("/me")

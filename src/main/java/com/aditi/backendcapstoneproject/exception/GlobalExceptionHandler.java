@@ -27,8 +27,8 @@ public class GlobalExceptionHandler {
         errorResponseDto.setStatus("Product Not Found");
         errorResponseDto.setMessage(productNotFoundException.getMessage());
 
-        ResponseEntity<ErrorResponseDto> responseEntity=
-                new ResponseEntity(errorResponseDto, HttpStatus.NOT_FOUND);
+        ResponseEntity<ErrorResponseDto> responseEntity =
+                new ResponseEntity<>(errorResponseDto, HttpStatus.NOT_FOUND);
 
         return responseEntity;
     }
@@ -107,6 +107,16 @@ public class GlobalExceptionHandler {
         ErrorResponseDto errorResponseDto = new ErrorResponseDto();
         errorResponseDto.setStatus("Validation Failed");
         errorResponseDto.setMessage(errorMessage);
+
+        return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InvalidPasswordResetTokenException.class)
+    public ResponseEntity<ErrorResponseDto> handleInvalidPasswordResetTokenException(
+            InvalidPasswordResetTokenException exception) {
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto();
+        errorResponseDto.setStatus("Invalid Password Reset Token");
+        errorResponseDto.setMessage(exception.getMessage());
 
         return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
     }

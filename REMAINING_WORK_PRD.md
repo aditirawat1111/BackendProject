@@ -128,5 +128,3 @@ This document maps the original Product Requirements Document (PRD) to the curre
   - Admin/internal APIs to **update order status** and support richer tracking.
   - Integrate with a **real payment gateway** instead of the current mocked `SUCCESS`.
   - Add **logout** and optionally **refresh tokens** for better session handling.
-
-

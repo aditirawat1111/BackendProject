@@ -1,14 +1,20 @@
 package com.aditi.backendcapstoneproject.service;
 
 import com.aditi.backendcapstoneproject.dto.AuthResponseDto;
+import com.aditi.backendcapstoneproject.dto.ForgotPasswordRequestDto;
 import com.aditi.backendcapstoneproject.dto.LoginRequestDto;
+import com.aditi.backendcapstoneproject.dto.PasswordResetRequestDto;
+import com.aditi.backendcapstoneproject.dto.PasswordResetTokenResponseDto;
 import com.aditi.backendcapstoneproject.dto.ProfileResponseDto;
 import com.aditi.backendcapstoneproject.dto.RegisterRequestDto;
 import com.aditi.backendcapstoneproject.dto.UpdateProfileRequestDto;
 import com.aditi.backendcapstoneproject.exception.InvalidCredentialsException;
+import com.aditi.backendcapstoneproject.exception.InvalidPasswordResetTokenException;
 import com.aditi.backendcapstoneproject.exception.UserAlreadyExistsException;
 import com.aditi.backendcapstoneproject.exception.UserNotFoundException;
+import com.aditi.backendcapstoneproject.model.PasswordResetToken;
 import com.aditi.backendcapstoneproject.model.User;
+import com.aditi.backendcapstoneproject.repository.PasswordResetTokenRepository;
 import com.aditi.backendcapstoneproject.repository.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,15 +31,18 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     public AuthenticationService(UserRepository userRepository,
                                  PasswordEncoder passwordEncoder,
                                  JwtService jwtService,
-                                 AuthenticationManager authenticationManager) {
+                                 AuthenticationManager authenticationManager,
+                                 PasswordResetTokenRepository passwordResetTokenRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
     public AuthResponseDto register(RegisterRequestDto request) throws UserAlreadyExistsException {
@@ -138,6 +147,50 @@ public class AuthenticationService {
 
         User updatedUser = userRepository.save(user);
         return ProfileResponseDto.from(updatedUser);
+    }
+
+    public PasswordResetTokenResponseDto requestPasswordReset(ForgotPasswordRequestDto request)
+            throws UserNotFoundException {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + request.getEmail()));
+
+        PasswordResetToken token = new PasswordResetToken();
+        token.setUser(user);
+        token.setToken(java.util.UUID.randomUUID().toString());
+        Date now = new Date();
+        token.setCreatedAt(now);
+        token.setLastModified(now);
+        token.setDeleted(false);
+        // Token valid for 1 hour
+        token.setExpiryDate(new Date(now.getTime() + 60 * 60 * 1000));
+        token.setUsed(false);
+
+        passwordResetTokenRepository.save(token);
+
+        PasswordResetTokenResponseDto responseDto = new PasswordResetTokenResponseDto();
+        responseDto.setMessage("Password reset token generated successfully. (In production, this would be emailed.)");
+        responseDto.setToken(token.getToken());
+        return responseDto;
+    }
+
+    public void resetPassword(PasswordResetRequestDto request)
+            throws InvalidPasswordResetTokenException {
+        PasswordResetToken token = passwordResetTokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new InvalidPasswordResetTokenException("Invalid password reset token"));
+
+        Date now = new Date();
+        if (token.isUsed() || token.getExpiryDate() == null || token.getExpiryDate().before(now)) {
+            throw new InvalidPasswordResetTokenException("Password reset token is expired or has already been used");
+        }
+
+        User user = token.getUser();
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setLastModified(now);
+        userRepository.save(user);
+
+        token.setUsed(true);
+        token.setLastModified(now);
+        passwordResetTokenRepository.save(token);
     }
 }
 
