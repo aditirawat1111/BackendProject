@@ -4,7 +4,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# Ignore all markdown documentation files in Git except README.md
+# Ignore all markdown docs except README.md
 *.md
 !README.md
 
