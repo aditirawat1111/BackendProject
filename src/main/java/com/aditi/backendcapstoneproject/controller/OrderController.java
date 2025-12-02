@@ -2,6 +2,7 @@ package com.aditi.backendcapstoneproject.controller;
 
 import com.aditi.backendcapstoneproject.dto.CreateOrderRequestDto;
 import com.aditi.backendcapstoneproject.dto.OrderResponseDto;
+import com.aditi.backendcapstoneproject.enums.OrderStatus;
 import com.aditi.backendcapstoneproject.exception.EmptyCartException;
 import com.aditi.backendcapstoneproject.exception.OrderNotFoundException;
 import com.aditi.backendcapstoneproject.model.User;
@@ -10,6 +11,7 @@ import com.aditi.backendcapstoneproject.service.OrderService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -52,6 +54,15 @@ public class OrderController {
         User user = getCurrentUser(authentication);
         List<OrderResponseDto> responseDtos = orderService.getOrders(user);
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);
+    }
+
+    @PatchMapping("/{orderId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<OrderResponseDto> updateOrderStatus(
+            @PathVariable Long orderId,
+            @RequestParam("status") OrderStatus status) throws OrderNotFoundException {
+        OrderResponseDto responseDto = orderService.updateOrderStatus(orderId, status);
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
     private User getCurrentUser(Authentication authentication) {

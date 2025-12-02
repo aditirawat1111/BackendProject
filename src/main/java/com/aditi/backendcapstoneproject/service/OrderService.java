@@ -96,6 +96,17 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    public OrderResponseDto updateOrderStatus(Long orderId, OrderStatus status) throws OrderNotFoundException {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order with id " + orderId + " not found"));
+
+        order.setStatus(status);
+        order.setLastModified(new Date());
+        orderRepository.save(order);
+
+        return buildOrderResponse(order);
+    }
+
     private OrderResponseDto buildOrderResponse(Order order) {
         List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
         List<OrderItemResponseDto> itemDtos = orderItems.stream()
