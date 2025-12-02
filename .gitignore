@@ -4,6 +4,10 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Ignore all markdown documentation files in Git except README.md
+*.md
+!README.md
+
 ### STS ###
 .apt_generated
 .classpath
