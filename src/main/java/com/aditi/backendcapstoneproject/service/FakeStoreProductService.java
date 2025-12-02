@@ -5,6 +5,9 @@ import com.aditi.backendcapstoneproject.dto.FakeStoreProductRequestDto;
 import com.aditi.backendcapstoneproject.dto.ProductRequestDto;
 import com.aditi.backendcapstoneproject.exception.ProductNotFoundException;
 import com.aditi.backendcapstoneproject.model.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -35,17 +38,27 @@ public class FakeStoreProductService implements ProductService{
 
     @Override
     public List<Product> getAllProducts() {
-        FakeStoreProductDto[] fakeStoreProductDtos=restTemplate.getForObject(
+        FakeStoreProductDto[] fakeStoreProductDtos = restTemplate.getForObject(
                 "https://fakestoreapi.com/products", FakeStoreProductDto[].class
         );
 
-        List<Product> products=new ArrayList<>();
+        List<Product> products = new ArrayList<>();
 
-        for(FakeStoreProductDto fakeStoreProductDto:fakeStoreProductDtos){
-            Product product=fakeStoreProductDto.toProduct();
-            products.add(product);
+        if (fakeStoreProductDtos != null) {
+            for (FakeStoreProductDto fakeStoreProductDto : fakeStoreProductDtos) {
+                if (fakeStoreProductDto != null) {
+                    Product product = fakeStoreProductDto.toProduct();
+                    products.add(product);
+                }
+            }
         }
         return products;
+    }
+
+    @Override
+    public Page<Product> getAllProducts(Pageable pageable) {
+        List<Product> all = getAllProducts();
+        return paginateList(all, pageable);
     }
 
     @Override
@@ -66,12 +79,12 @@ public class FakeStoreProductService implements ProductService{
 
     @Override
     public Product updateProduct(Long id, ProductRequestDto productRequestDto) {
-        return null;
+        throw new UnsupportedOperationException("Update is not supported for FakeStoreProductService");
     }
 
     @Override
     public Product partialUpdateProduct(Long id, ProductRequestDto productRequestDto) {
-        return null;
+        throw new UnsupportedOperationException("Partial update is not supported for FakeStoreProductService");
     }
 
     @Override
@@ -88,5 +101,42 @@ public class FakeStoreProductService implements ProductService{
                     (product.getDescription() != null && product.getDescription().toLowerCase().contains(lowerKeyword))
                 )
                 .toList();
+    }
+
+    @Override
+    public Page<Product> searchProducts(String keyword, Pageable pageable) {
+        List<Product> filtered = searchProducts(keyword);
+        return paginateList(filtered, pageable);
+    }
+
+    @Override
+    public List<Product> getProductsByCategory(String categoryName) {
+        // FakeStore API does not support categories in this implementation;
+        // return all products for now.
+        return getAllProducts();
+    }
+
+    @Override
+    public Page<Product> getProductsByCategory(String categoryName, Pageable pageable) {
+        return getAllProducts(pageable);
+    }
+
+    private Page<Product> paginateList(List<Product> products, Pageable pageable) {
+        if (pageable == null || pageable.isUnpaged()) {
+            return new PageImpl<>(products);
+        }
+
+        int pageSize = pageable.getPageSize();
+        int currentPage = pageable.getPageNumber();
+        int startItem = currentPage * pageSize;
+
+        if (startItem >= products.size()) {
+            return new PageImpl<>(List.of(), pageable, products.size());
+        }
+
+        int toIndex = Math.min(startItem + pageSize, products.size());
+        List<Product> subList = products.subList(startItem, toIndex);
+
+        return new PageImpl<>(subList, pageable, products.size());
     }
 }

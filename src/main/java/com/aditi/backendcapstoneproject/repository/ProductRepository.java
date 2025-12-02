@@ -1,6 +1,8 @@
 package com.aditi.backendcapstoneproject.repository;
 
 import com.aditi.backendcapstoneproject.model.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,14 +15,12 @@ import java.util.Optional;
 //2nd argument=type of the primary key for the table;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    Product save(Product product);
-
-    List<Product> findAll();
-
     Optional<Product> findById(long id);
 
     //Declarative Queries
     List<Product> findByCategory_Name(String categoryName);
+
+    Page<Product> findByCategory_Name(String categoryName, Pageable pageable);
 
     //HQL Queries
     @Query("select p from Product p where p.category.name=:categoryName")
@@ -31,6 +31,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> getProductByCategoryNameNative(@Param("categoryName") String categoryName);
 
     //Search Queries
-    @Query("select p from Product p where lower(p.name) like lower(concat('%', :keyword, '%')) or lower(p.description) like lower(concat('%', :keyword, '%'))")
-    List<Product> searchProducts(@Param("keyword") String keyword);
+    @Query("select p from Product p where " +
+            "lower(p.name) like lower(concat('%', :keyword, '%')) " +
+            "or lower(p.description) like lower(concat('%', :keyword, '%'))")
+    Page<Product> searchProducts(@Param("keyword") String keyword, Pageable pageable);
 }

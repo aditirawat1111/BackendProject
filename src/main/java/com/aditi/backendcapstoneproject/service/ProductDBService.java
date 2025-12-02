@@ -6,6 +6,8 @@ import com.aditi.backendcapstoneproject.model.Category;
 import com.aditi.backendcapstoneproject.model.Product;
 import com.aditi.backendcapstoneproject.repository.CategoryRepository;
 import com.aditi.backendcapstoneproject.repository.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,6 +36,11 @@ public class ProductDBService implements ProductService {
     @Override
     public List<Product> getAllProducts() {
         return productRepository.findAll();
+    }
+
+    @Override
+    public Page<Product> getAllProducts(Pageable pageable) {
+        return productRepository.findAll(pageable);
     }
 
     @Override
@@ -97,7 +104,15 @@ public class ProductDBService implements ProductService {
         if (keyword == null || keyword.trim().isEmpty()) {
             return productRepository.findAll();
         }
-        return productRepository.searchProducts(keyword.trim());
+        return productRepository.searchProducts(keyword.trim(), Pageable.unpaged()).getContent();
+    }
+
+    @Override
+    public Page<Product> searchProducts(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return productRepository.findAll(pageable);
+        }
+        return productRepository.searchProducts(keyword.trim(), pageable);
     }
 
     @Override
@@ -106,6 +121,14 @@ public class ProductDBService implements ProductService {
             return productRepository.findAll();
         }
         return productRepository.findByCategory_Name(categoryName.trim());
+    }
+
+    @Override
+    public Page<Product> getProductsByCategory(String categoryName, Pageable pageable) {
+        if (categoryName == null || categoryName.trim().isEmpty()) {
+            return productRepository.findAll(pageable);
+        }
+        return productRepository.findByCategory_Name(categoryName.trim(), pageable);
     }
 
     public Category getCategoryFromDB(String name){

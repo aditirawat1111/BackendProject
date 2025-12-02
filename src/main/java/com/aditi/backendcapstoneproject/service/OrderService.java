@@ -7,6 +7,8 @@ import com.aditi.backendcapstoneproject.exception.EmptyCartException;
 import com.aditi.backendcapstoneproject.exception.OrderNotFoundException;
 import com.aditi.backendcapstoneproject.model.*;
 import com.aditi.backendcapstoneproject.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -94,6 +96,17 @@ public class OrderService {
         return orders.stream()
                 .map(this::buildOrderResponse)
                 .collect(Collectors.toList());
+    }
+
+    public Page<OrderResponseDto> getOrders(User user, Pageable pageable, OrderStatus status) {
+        Page<Order> page;
+        if (status != null) {
+            page = orderRepository.findByUserAndStatus(user, status, pageable);
+        } else {
+            page = orderRepository.findByUser(user, pageable);
+        }
+
+        return page.map(this::buildOrderResponse);
     }
 
     public OrderResponseDto updateOrderStatus(Long orderId, OrderStatus status) throws OrderNotFoundException {

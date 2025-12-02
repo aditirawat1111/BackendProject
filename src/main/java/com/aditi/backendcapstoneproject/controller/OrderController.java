@@ -8,6 +8,10 @@ import com.aditi.backendcapstoneproject.exception.OrderNotFoundException;
 import com.aditi.backendcapstoneproject.model.User;
 import com.aditi.backendcapstoneproject.repository.UserRepository;
 import com.aditi.backendcapstoneproject.service.OrderService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,10 +54,17 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<List<OrderResponseDto>> getOrders(Authentication authentication) {
+    public ResponseEntity<Page<OrderResponseDto>> getOrders(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "orderDate,desc") String sort,
+            @RequestParam(required = false) OrderStatus status) {
         User user = getCurrentUser(authentication);
-        List<OrderResponseDto> responseDtos = orderService.getOrders(user);
-        return new ResponseEntity<>(responseDtos, HttpStatus.OK);
+
+        Pageable pageable = buildPageable(page, size, sort);
+        Page<OrderResponseDto> responsePage = orderService.getOrders(user, pageable, status);
+        return new ResponseEntity<>(responsePage, HttpStatus.OK);
     }
 
     @PatchMapping("/{orderId}/status")
@@ -69,6 +80,16 @@ public class OrderController {
         String email = ((UserDetails) authentication.getPrincipal()).getUsername();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    private Pageable buildPageable(int page, int size, String sort) {
+        String[] sortParts = sort.split(",");
+        String sortField = sortParts[0];
+        Sort.Direction direction = Sort.Direction.DESC;
+        if (sortParts.length > 1) {
+            direction = Sort.Direction.fromString(sortParts[1]);
+        }
+        return PageRequest.of(page, size, Sort.by(direction, sortField));
     }
 }
 

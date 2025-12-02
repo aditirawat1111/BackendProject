@@ -5,13 +5,14 @@ import com.aditi.backendcapstoneproject.dto.ProductResponseDto;
 import com.aditi.backendcapstoneproject.exception.ProductNotFoundException;
 import com.aditi.backendcapstoneproject.model.Product;
 import com.aditi.backendcapstoneproject.service.ProductService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 public class ProductController {
@@ -35,48 +36,55 @@ public class ProductController {
 
 
     @GetMapping("/products")
-    public ResponseEntity<List<ProductResponseDto>> getAllProducts(){
+    public ResponseEntity<Page<ProductResponseDto>> getAllProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String sort,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String q) {
 
-        List<Product> products = productService.getAllProducts();
+        Pageable pageable = buildPageable(page, size, sort);
 
-        List<ProductResponseDto> productResponseDtos =
-                products.stream()
-                        .map(ProductResponseDto::from)
-                        .collect(Collectors.toList());
+        Page<Product> productPage;
+        if (q != null && !q.trim().isEmpty()) {
+            productPage = productService.searchProducts(q, pageable);
+        } else if (category != null && !category.trim().isEmpty()) {
+            productPage = productService.getProductsByCategory(category, pageable);
+        } else {
+            productPage = productService.getAllProducts(pageable);
+        }
 
-        return new ResponseEntity<>(productResponseDtos, HttpStatus.ACCEPTED);
+        Page<ProductResponseDto> dtoPage = productPage.map(ProductResponseDto::from);
+
+        return new ResponseEntity<>(dtoPage, HttpStatus.OK);
     }
 
     @GetMapping("/products/search")
-    public ResponseEntity<List<ProductResponseDto>> searchProducts(@RequestParam(required = false) String q) {
+    public ResponseEntity<Page<ProductResponseDto>> searchProducts(
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String sort) {
 
-        List<Product> products;
-        if (q == null || q.trim().isEmpty()) {
-            products = productService.getAllProducts();
-        } else {
-            products = productService.searchProducts(q);
-        }
+        Pageable pageable = buildPageable(page, size, sort);
+        Page<Product> productPage = productService.searchProducts(q, pageable);
+        Page<ProductResponseDto> dtoPage = productPage.map(ProductResponseDto::from);
 
-        List<ProductResponseDto> productResponseDtos =
-                products.stream()
-                        .map(ProductResponseDto::from)
-                        .collect(Collectors.toList());
-
-        return new ResponseEntity<>(productResponseDtos, HttpStatus.OK);
+        return new ResponseEntity<>(dtoPage, HttpStatus.OK);
     }
 
     @GetMapping("/products/by-category")
-    public ResponseEntity<List<ProductResponseDto>> getProductsByCategory(
-            @RequestParam("category") String categoryName) {
+    public ResponseEntity<Page<ProductResponseDto>> getProductsByCategory(
+            @RequestParam("category") String categoryName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String sort) {
 
-        List<Product> products = productService.getProductsByCategory(categoryName);
+        Pageable pageable = buildPageable(page, size, sort);
+        Page<Product> productPage = productService.getProductsByCategory(categoryName, pageable);
+        Page<ProductResponseDto> dtoPage = productPage.map(ProductResponseDto::from);
 
-        List<ProductResponseDto> productResponseDtos =
-                products.stream()
-                        .map(ProductResponseDto::from)
-                        .collect(Collectors.toList());
-
-        return new ResponseEntity<>(productResponseDtos, HttpStatus.OK);
+        return new ResponseEntity<>(dtoPage, HttpStatus.OK);
     }
 
 
@@ -111,5 +119,15 @@ public class ProductController {
         ProductResponseDto productResponseDto=ProductResponseDto.from(updateProduct);
 
         return new ResponseEntity<>(productResponseDto, HttpStatus.OK);
+    }
+
+    private Pageable buildPageable(int page, int size, String sort) {
+        String[] sortParts = sort.split(",");
+        String sortField = sortParts[0];
+        Sort.Direction direction = Sort.Direction.ASC;
+        if (sortParts.length > 1) {
+            direction = Sort.Direction.fromString(sortParts[1]);
+        }
+        return PageRequest.of(page, size, Sort.by(direction, sortField));
     }
 }
