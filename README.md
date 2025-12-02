@@ -40,6 +40,9 @@ A Spring Boot-based **e-commerce backend** that provides end-to-end APIs for use
   - `GET /products/by-category?category={name}`.
 - ✅ Search:
   - `GET /products/search?q={keyword}` – case-insensitive search on name & description.
+- ✅ Pagination, filtering, and sorting:
+  - `page`, `size`, `sort` query params on `/products`, `/products/search`, and `/products/by-category`.
+  - Combined search + category filters via `/products?category=...&q=...`.
 
 ### 3. Shopping Cart
 - ✅ Authenticated, user-specific cart:
@@ -58,6 +61,8 @@ A Spring Boot-based **e-commerce backend** that provides end-to-end APIs for use
   - `GET /orders/{orderId}` – full order details including `OrderStatus`.
 - ✅ Admin status updates:
   - `PATCH /orders/{orderId}/status?status={PENDING|CONFIRMED|SHIPPED|DELIVERED|CANCELLED}` (admin only).
+- ✅ Pagination, filtering, and sorting:
+  - `page`, `size`, `sort`, and `status` query params on `/orders`.
 
 ### 5. Payments
 - ✅ Payment model linked to orders:
@@ -126,15 +131,15 @@ For a detailed breakdown of each package and class, see `PROJECT_STRUCTURE.md`.
 | PUT    | `/auth/profile`         | Update profile              | Yes  |
 
 ### Products
-| Method | Endpoint                     | Description                       | Auth |
-|--------|------------------------------|-----------------------------------|------|
-| GET    | `/products`                  | Get all products                  | No   |
-| GET    | `/products/{id}`            | Get product by ID                 | No   |
-| GET    | `/products/search`          | Search products (`q` query param) | No   |
-| GET    | `/products/by-category`     | Get products by category          | No   |
-| POST   | `/products/`                | Create product                    | Yes* |
-| PUT    | `/products/{id}`           | Update product                    | Yes* |
-| PATCH  | `/products/{id}`           | Partially update product          | Yes* |
+| Method | Endpoint                 | Description                                      | Auth |
+|--------|--------------------------|--------------------------------------------------|------|
+| GET    | `/products`              | List products (with pagination/filter/sort)      | No   |
+| GET    | `/products/{id}`         | Get product by ID                                | No   |
+| GET    | `/products/search`       | Search products (`q`, `page`, `size`, `sort`)   | No   |
+| GET    | `/products/by-category`  | Products by category (with pagination/sort)     | No   |
+| POST   | `/products/`             | Create product                                   | Yes* |
+| PUT    | `/products/{id}`         | Update product                                   | Yes* |
+| PATCH  | `/products/{id}`         | Partially update product                         | Yes* |
 
 > \*Currently configurable via security rules; recommended to keep product writes protected (e.g., admin-only).
 
@@ -148,12 +153,12 @@ For a detailed breakdown of each package and class, see `PROJECT_STRUCTURE.md`.
 | DELETE | `/cart`                      | Clear cart                   | Yes  |
 
 ### Orders
-| Method | Endpoint                           | Description                    | Auth |
-|--------|------------------------------------|--------------------------------|------|
-| POST   | `/orders`                          | Create order from cart        | Yes  |
-| GET    | `/orders`                          | Get user order history        | Yes  |
-| GET    | `/orders/{orderId}`               | Get order details             | Yes  |
-| PATCH  | `/orders/{orderId}/status`        | Update order status (admin)   | Yes  |
+| Method | Endpoint                    | Description                                         | Auth |
+|--------|-----------------------------|-----------------------------------------------------|------|
+| POST   | `/orders`                   | Create order from cart                             | Yes  |
+| GET    | `/orders`                   | Paginated user order history (with status filter)  | Yes  |
+| GET    | `/orders/{orderId}`         | Get order details                                  | Yes  |
+| PATCH  | `/orders/{orderId}/status`  | Update order status (admin)                        | Yes  |
 
 ### Payments
 | Method | Endpoint                     | Description                    | Auth |
@@ -213,11 +218,17 @@ mvn test
 - ✅ Project setup with Spring Boot 3.4.5.
 - ✅ MySQL integration with Flyway migrations.
 - ✅ Full product catalog (CRUD, search, category browsing).
+- ✅ Pagination, filtering, and sorting for product listing.
 - ✅ User registration, login, JWT authentication, and profile management.
 - ✅ Shopping cart (user-specific, JWT-protected).
 - ✅ Order creation, history, and status tracking (with admin updates).
+- ✅ Pagination, filtering, and sorting for order listing.
 - ✅ Payment model and basic payment recording with receipt-style responses.
 - ✅ Centralized exception handling and validation.
+
+For more implementation details, see:
+- `PROJECT_STRUCTURE.md` – current package-level breakdown.
+- `PAGINATION_FILTER_SORT_EXPLANATION.md` – deep dive into pagination/filter/sort behavior.
 
 ---
 
@@ -227,7 +238,6 @@ mvn test
 - [ ] Integration with a real payment gateway (Stripe/Razorpay/etc.) instead of mocked success.
 - [ ] Logout / token revocation and refresh token flow.
 - [ ] API documentation with Swagger/OpenAPI.
-- [ ] Pagination, filtering, and sorting for product and order listing.
 - [ ] Soft delete and audit improvements.
 - [ ] Additional logging, metrics, and monitoring.
 - [ ] Comprehensive unit and integration test coverage.
