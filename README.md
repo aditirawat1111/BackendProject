@@ -1,92 +1,177 @@
 # Backend Capstone Project
 
-A Spring Boot-based e-commerce backend REST API for product management.
+A Spring Boot-based **e-commerce backend** that provides end-to-end APIs for user management, product catalog, shopping cart, orders, and payments, secured with JWT-based authentication.
+
+---
 
 ## Technology Stack
 
 - **Java 17**
 - **Spring Boot 3.4.5**
+- **Spring Web**
 - **Spring Data JPA**
+- **Spring Security (JWT, BCrypt)**
 - **MySQL Database**
-- **Flyway** (Database Migration Tool)
+- **Flyway** (database migrations)
 - **Lombok**
 - **Maven**
 
-## Project Structure
+---
 
-```
+## High-Level Features
+
+### 1. User Management & Authentication
+- ✅ User registration (`/auth/register`) with email uniqueness and password hashing (BCrypt).
+- ✅ User login (`/auth/login`) with JWT token generation.
+- ✅ Profile management:
+  - `GET /auth/me` – view current user profile.
+  - `PUT /auth/profile` – update profile details.
+- ✅ Password reset flow:
+  - `POST /auth/forgot-password` – request reset token.
+  - `POST /auth/reset-password` – reset password using token.
+- ✅ Centralized exception handling and validation for all auth flows.
+
+### 2. Product Catalog
+- ✅ Product CRUD:
+  - Get product by ID.
+  - Get all products.
+  - Create, update (PUT), and partial update (PATCH) products.
+- ✅ Category-based product listing:
+  - `GET /products/by-category?category={name}`.
+- ✅ Search:
+  - `GET /products/search?q={keyword}` – case-insensitive search on name & description.
+
+### 3. Shopping Cart
+- ✅ Authenticated, user-specific cart:
+  - `GET /cart` – view cart with items, quantities, and totals.
+  - `POST /cart/items` – add item to cart.
+  - `PUT /cart/items/{itemId}` – update quantity.
+  - `DELETE /cart/items/{itemId}` – remove item.
+  - `DELETE /cart` – clear cart.
+
+### 4. Orders
+- ✅ Create order from cart:
+  - `POST /orders` – converts current user’s cart into an order with delivery address.
+- ✅ Order history:
+  - `GET /orders` – list all orders for the authenticated user.
+- ✅ Order details & tracking:
+  - `GET /orders/{orderId}` – full order details including `OrderStatus`.
+- ✅ Admin status updates:
+  - `PATCH /orders/{orderId}/status?status={PENDING|CONFIRMED|SHIPPED|DELIVERED|CANCELLED}` (admin only).
+
+### 5. Payments
+- ✅ Payment model linked to orders:
+  - `POST /payments` – create payment for an order (amount derived from order).
+  - `GET /payments/{paymentId}` – view payment details (acts as receipt).
+- ✅ Multiple payment methods via `PaymentMethod` enum:
+  - `CREDIT_CARD`, `DEBIT_CARD`, `UPI`, `NET_BANKING`, `COD`.
+- ✅ Payment security:
+  - All payment endpoints are JWT-protected.
+  - `PaymentStatus` tracks payment lifecycle.
+
+### 6. Infrastructure & Cross-Cutting Concerns
+- ✅ MySQL + Flyway migrations for schema management (`category`, `product`, `user`, `cart`, `cart_item`, `order`, `order_item`, `payment`, `password_reset_token`).
+- ✅ Layered architecture (Controller → Service → Repository → Database).
+- ✅ Global exception handling with standardized error responses.
+- ✅ DTO-based request/response mapping.
+
+---
+
+## Project Structure (Overview)
+
+```text
 src/main/java/com/aditi/backendcapstoneproject/
-├── controller/          # REST Controllers
-├── service/            # Business Logic Layer
-├── repository/         # Data Access Layer
-├── model/              # Entity Models
-├── dto/                # Data Transfer Objects
-├── exception/          # Exception Handling
-├── config/             # Configuration Classes
-└── component/          # Utility Components
+├── BackendCapstoneProjectApplication.java  # Spring Boot entry point
+├── component/                              # Utility components (e.g., DbConnectionChecker)
+├── config/                                 # Security, JWT filter, RestTemplate config
+├── controller/                             # REST controllers (Auth, Product, Cart, Order, Payment)
+├── dto/                                    # Request/Response DTOs
+├── exception/                              # Custom exceptions & GlobalExceptionHandler
+├── model/                                  # JPA entities (User, Product, Category, Cart, Order, Payment, etc.)
+├── repository/                             # Spring Data JPA repositories
+└── service/                                # Business services (Authentication, Product, Cart, Order, Payment, JWT)
 ```
 
-## Features
+For a detailed breakdown of each package and class, see `PROJECT_STRUCTURE.md`.
 
-### Product Management
-- ✅ Get product by ID
-- ✅ Get all products
-- ✅ Create new product
-- ✅ Update product (full update)
-- ✅ Partial update product
-- ✅ Category-based product management
+---
 
-### Database
-- ✅ MySQL integration
-- ✅ Flyway migrations for database schema management
-- ✅ JPA/Hibernate for ORM
-- ✅ Custom queries support (HQL, Native, Declarative)
+## Security
 
-### Exception Handling
-- ✅ Global exception handler
-- ✅ Custom exceptions
-- ✅ Standardized error responses
+- **Authentication**: JWT-based, stateless sessions.
+- **Password hashing**: BCrypt via Spring Security.
+- **Public endpoints** (no JWT required):
+  - `POST /auth/register`
+  - `POST /auth/login`
+  - `GET /products`
+  - `GET /products/{id}`
+  - `GET /products/search`
+  - `GET /products/by-category`
+- **Protected endpoints**: All cart, order, payment, profile, and most other APIs (require `Authorization: Bearer <token>`).
+- **Admin-only**:
+  - `PATCH /orders/{orderId}/status`.
 
-## Database Schema
+---
 
-### Category Table
-- `id` (Primary Key)
-- `name`
-- `description`
-- `created_at`
-- `last_modified`
-- `is_deleted`
+## API Endpoint Summary
 
-### Product Table
-- `id` (Primary Key)
-- `name`
-- `description`
-- `image_url`
-- `price`
-- `category_id` (Foreign Key)
-- `created_at`
-- `last_modified`
-- `is_deleted`
+### Authentication & Profile
+| Method | Endpoint                | Description                  | Auth |
+|--------|-------------------------|------------------------------|------|
+| POST   | `/auth/register`        | Register new user           | No   |
+| POST   | `/auth/login`           | Login and get JWT           | No   |
+| POST   | `/auth/forgot-password` | Request password reset      | No   |
+| POST   | `/auth/reset-password`  | Reset password with token   | No   |
+| GET    | `/auth/me`              | Get current user profile    | Yes  |
+| PUT    | `/auth/profile`         | Update profile              | Yes  |
 
-## API Endpoints
+### Products
+| Method | Endpoint                     | Description                       | Auth |
+|--------|------------------------------|-----------------------------------|------|
+| GET    | `/products`                  | Get all products                  | No   |
+| GET    | `/products/{id}`            | Get product by ID                 | No   |
+| GET    | `/products/search`          | Search products (`q` query param) | No   |
+| GET    | `/products/by-category`     | Get products by category          | No   |
+| POST   | `/products/`                | Create product                    | Yes* |
+| PUT    | `/products/{id}`           | Update product                    | Yes* |
+| PATCH  | `/products/{id}`           | Partially update product          | Yes* |
 
-| Method | Endpoint | Description | Status Code |
-|--------|----------|-------------|-------------|
-| GET | `/products/{id}` | Get product by ID | 200 OK / 404 Not Found |
-| GET | `/products` | Get all products | 202 Accepted |
-| POST | `/products/` | Create a new product | 200 OK |
-| PUT | `/products/{id}` | Update entire product | 200 OK |
-| PATCH | `/products/{id}` | Partially update product | 200 OK |
+> \*Currently configurable via security rules; recommended to keep product writes protected (e.g., admin-only).
 
-## Setup Instructions
+### Cart
+| Method | Endpoint                     | Description                  | Auth |
+|--------|------------------------------|------------------------------|------|
+| GET    | `/cart`                      | Get current user cart        | Yes  |
+| POST   | `/cart/items`               | Add item to cart             | Yes  |
+| PUT    | `/cart/items/{itemId}`      | Update item quantity         | Yes  |
+| DELETE | `/cart/items/{itemId}`      | Remove item from cart        | Yes  |
+| DELETE | `/cart`                      | Clear cart                   | Yes  |
+
+### Orders
+| Method | Endpoint                           | Description                    | Auth |
+|--------|------------------------------------|--------------------------------|------|
+| POST   | `/orders`                          | Create order from cart        | Yes  |
+| GET    | `/orders`                          | Get user order history        | Yes  |
+| GET    | `/orders/{orderId}`               | Get order details             | Yes  |
+| PATCH  | `/orders/{orderId}/status`        | Update order status (admin)   | Yes  |
+
+### Payments
+| Method | Endpoint                     | Description                    | Auth |
+|--------|------------------------------|--------------------------------|------|
+| POST   | `/payments`                  | Create payment for an order   | Yes  |
+| GET    | `/payments/{paymentId}`      | Get payment details/receipt   | Yes  |
+
+---
+
+## Setup & Running
 
 ### Prerequisites
-- Java 17 or higher
-- MySQL 8.0 or higher
+- Java 17+
+- MySQL 8.0+
 - Maven 3.6+
 
 ### Database Setup
-1. Create MySQL database:
+
 ```sql
 CREATE DATABASE CapstoneBackendProject;
 CREATE USER 'CapstoneBackendProject_user'@'localhost' IDENTIFIED BY 'aditimysql@11';
@@ -94,85 +179,59 @@ GRANT ALL PRIVILEGES ON CapstoneBackendProject.* TO 'CapstoneBackendProject_user
 FLUSH PRIVILEGES;
 ```
 
-2. Update `application.properties` if needed with your database credentials.
+Update `application.properties` if you change database name/user/password.
 
-### Running the Application
-1. Clone the repository
-2. Navigate to project directory
-3. Run the application:
+### Run the Application
+
 ```bash
 mvn spring-boot:run
 ```
 
-Or build and run:
+Or build and run the JAR:
+
 ```bash
 mvn clean install
 java -jar target/backend-capstone-project-0.0.1-SNAPSHOT.jar
 ```
 
-The application will start on the default port (usually 8080).
+By default, the app runs on `http://localhost:8080`.
 
-## Configuration
-
-### application.properties
-- Database connection settings
-- Flyway migration configuration
-- JPA/Hibernate settings
-
-## Key Components
-
-### Models
-- **BaseModel**: Base entity class with common fields (id, name, timestamps, soft delete)
-- **Product**: Product entity with price, description, image URL, and category relationship
-- **Category**: Category entity with product relationship
-
-### DTOs
-- **ProductRequestDto**: Input DTO for creating/updating products
-- **ProductResponseDto**: Output DTO for product responses
-- **ErrorResponseDto**: Standardized error response format
-
-### Services
-- **ProductService**: Interface defining product operations
-- **ProductDBService**: Database implementation of product service with category management
-
-### Repositories
-- **ProductRepository**: JPA repository with custom query methods
-- **CategoryRepository**: JPA repository for category operations
-
-### Exception Handling
-- **ProductNotFoundException**: Custom exception for product not found scenarios
-- **GlobalExceptionHandler**: Centralized exception handling with `@RestControllerAdvice`
+---
 
 ## Testing
 
-Run tests using:
+Run all tests:
+
 ```bash
 mvn test
 ```
 
-## Progress
+---
 
-- ✅ Project setup with Spring Boot 3.4.5
-- ✅ Database integration with MySQL
-- ✅ Entity models (Product, Category, BaseModel)
-- ✅ REST API endpoints implementation
-- ✅ Service layer with business logic
-- ✅ Repository layer with JPA and custom queries
-- ✅ Exception handling
-- ✅ Database migrations with Flyway
-- ✅ Category management (auto-create if not exists)
-- ✅ CRUD operations for products
-- ✅ DTOs for request/response mapping
+## Current Progress
 
-## Future Enhancements
+- ✅ Project setup with Spring Boot 3.4.5.
+- ✅ MySQL integration with Flyway migrations.
+- ✅ Full product catalog (CRUD, search, category browsing).
+- ✅ User registration, login, JWT authentication, and profile management.
+- ✅ Shopping cart (user-specific, JWT-protected).
+- ✅ Order creation, history, and status tracking (with admin updates).
+- ✅ Payment model and basic payment recording with receipt-style responses.
+- ✅ Centralized exception handling and validation.
 
-- [ ] Add authentication and authorization
-- [ ] Implement pagination for product listing
-- [ ] Add filtering and sorting capabilities
-- [ ] Add product image upload functionality
-- [ ] Implement caching
-- [ ] Add unit and integration tests
-- [ ] Add API documentation with Swagger/OpenAPI
-- [ ] Implement soft delete functionality
-- [ ] Add logging and monitoring
+---
 
+## Remaining / Future Enhancements
+
+- [ ] Social login (Google, etc.) using OAuth2.
+- [ ] Integration with a real payment gateway (Stripe/Razorpay/etc.) instead of mocked success.
+- [ ] Logout / token revocation and refresh token flow.
+- [ ] API documentation with Swagger/OpenAPI.
+- [ ] Pagination, filtering, and sorting for product and order listing.
+- [ ] Soft delete and audit improvements.
+- [ ] Additional logging, metrics, and monitoring.
+- [ ] Comprehensive unit and integration test coverage.
+
+---
+
+*This README reflects the current implemented backend as of the latest development updates.*
