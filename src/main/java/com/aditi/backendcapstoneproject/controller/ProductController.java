@@ -27,10 +27,10 @@ public class ProductController {
     public ResponseEntity<ProductResponseDto> getProductById
             (@PathVariable long id) throws ProductNotFoundException {
 
-        Product product=productService.getProductsById(id);
-        ProductResponseDto productResponseDto=ProductResponseDto.from(product);
+        Product product = productService.getProductsById(id);
+        ProductResponseDto productResponseDto = ProductResponseDto.from(product);
 
-        return new ResponseEntity(productResponseDto, HttpStatus.OK);
+        return new ResponseEntity<>(productResponseDto, HttpStatus.OK);
     }
 
 
@@ -38,19 +38,13 @@ public class ProductController {
     public ResponseEntity<List<ProductResponseDto>> getAllProducts(){
 
         List<Product> products = productService.getAllProducts();
-//        List<ProductResponseDto> productResponseDtos=new ArrayList<>();
 
-        List<ProductResponseDto> productResponseDtos=
+        List<ProductResponseDto> productResponseDtos =
                 products.stream()
                         .map(ProductResponseDto::from)
                         .collect(Collectors.toList());
 
-//        for(Product product: products){
-//            ProductResponseDto productResponseDto=ProductResponseDto.from(product);
-//            productResponseDtos.add(productResponseDto);
-//        }
-
-        return new ResponseEntity(productResponseDtos, HttpStatus.ACCEPTED);
+        return new ResponseEntity<>(productResponseDtos, HttpStatus.ACCEPTED);
     }
 
     @GetMapping("/products/search")
@@ -62,6 +56,20 @@ public class ProductController {
         } else {
             products = productService.searchProducts(q);
         }
+
+        List<ProductResponseDto> productResponseDtos =
+                products.stream()
+                        .map(ProductResponseDto::from)
+                        .collect(Collectors.toList());
+
+        return new ResponseEntity<>(productResponseDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/products/by-category")
+    public ResponseEntity<List<ProductResponseDto>> getProductsByCategory(
+            @RequestParam("category") String categoryName) {
+
+        List<Product> products = productService.getProductsByCategory(categoryName);
 
         List<ProductResponseDto> productResponseDtos =
                 products.stream()

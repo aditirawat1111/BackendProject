@@ -100,6 +100,14 @@ public class ProductDBService implements ProductService {
         return productRepository.searchProducts(keyword.trim());
     }
 
+    @Override
+    public List<Product> getProductsByCategory(String categoryName) {
+        if (categoryName == null || categoryName.trim().isEmpty()) {
+            return productRepository.findAll();
+        }
+        return productRepository.findByCategory_Name(categoryName.trim());
+    }
+
     public Category getCategoryFromDB(String name){
         Optional<Category> optionalCategory = categoryRepository.findByName(name);
         if(optionalCategory.isPresent()){
