@@ -6,6 +6,7 @@ import com.aditi.backendcapstoneproject.model.Category;
 import com.aditi.backendcapstoneproject.model.Product;
 import com.aditi.backendcapstoneproject.repository.CategoryRepository;
 import com.aditi.backendcapstoneproject.service.ProductService;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,7 +25,7 @@ public class CategoryController {
     private final ProductService productService;
 
     public CategoryController(CategoryRepository categoryRepository,
-                              ProductService productService) {
+                              @Qualifier("productDBService")ProductService productService) {
         this.categoryRepository = categoryRepository;
         this.productService = productService;
     }

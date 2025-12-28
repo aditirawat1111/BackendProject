@@ -88,7 +88,7 @@ public class ProductController {
     }
 
 
-    @PostMapping("/products/")
+    @PostMapping("/products")
     public ProductResponseDto createProduct(@RequestBody ProductRequestDto productRequestDto) {
 
         Product product=productService.createProduct(productRequestDto.getName(),

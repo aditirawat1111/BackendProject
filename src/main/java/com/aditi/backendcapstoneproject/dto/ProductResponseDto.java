@@ -2,6 +2,7 @@ package com.aditi.backendcapstoneproject.dto;
 
 import com.aditi.backendcapstoneproject.model.Product;
 import com.aditi.backendcapstoneproject.model.Category;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,13 +16,14 @@ public class ProductResponseDto {
     private Double price;
     private String category;
 
+//    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static ProductResponseDto from(Product product) {
         ProductResponseDto productResponseDto = new ProductResponseDto();
         productResponseDto.setId(product.getId());
         productResponseDto.setName(product.getName());
         productResponseDto.setDescription(product.getDescription());
-        productResponseDto.setImageUrl(product.getImageUrl());
         productResponseDto.setPrice(product.getPrice());
+        productResponseDto.setImageUrl(product.getImageUrl());
         productResponseDto.setCategory(product.getCategory().getName());
 
         return productResponseDto;

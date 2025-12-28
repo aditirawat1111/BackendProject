@@ -9,6 +9,7 @@ import com.aditi.backendcapstoneproject.repository.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +45,8 @@ public class ProductDBService implements ProductService {
     }
 
     @Override
-    public Product createProduct(String name, String description, String category, double price, String imageUrl) {
+    @Transactional
+    public Product createProduct(String name, String description, String category, Double price, String imageUrl) {
 
         Product product=new Product();
         product.setName(name);
@@ -59,6 +61,7 @@ public class ProductDBService implements ProductService {
     }
 
     @Override
+    @Transactional
     public Product updateProduct(Long id, ProductRequestDto productRequestDto) throws ProductNotFoundException {
         Product product=productRepository.findById(id)
                 .orElseThrow(()->new ProductNotFoundException("The Product with id "+id+" doesn't exist"));
@@ -75,23 +78,24 @@ public class ProductDBService implements ProductService {
     }
 
     @Override
+    @Transactional
     public Product partialUpdateProduct(Long id, ProductRequestDto productRequestDto) throws ProductNotFoundException {
         Product product=productRepository.findById(id)
                 .orElseThrow(()-> new ProductNotFoundException("The Product with id "+id+" doesn't exist"));
 
-        if(productRequestDto.getName()!=null && !productRequestDto.getName().equals(product.getName())){
+        if(productRequestDto.getName()!=null){
             product.setName(productRequestDto.getName());
         }
-        if(productRequestDto.getDescription()!=null && !productRequestDto.getDescription().equals(product.getDescription())){
+        if(productRequestDto.getDescription()!=null){
             product.setDescription(productRequestDto.getDescription());
         }
-        if(productRequestDto.getPrice()!=0 && productRequestDto.getPrice()!=(product.getPrice())){
+        if(productRequestDto.getPrice()!=null){
             product.setPrice(productRequestDto.getPrice());
         }
-        if(productRequestDto.getImageUrl()!=null && productRequestDto.getImageUrl().equals(product.getImageUrl())){
+        if(productRequestDto.getImageUrl()!=null){
             product.setImageUrl(productRequestDto.getImageUrl());
         }
-        if(productRequestDto.getCategory()!=null && !productRequestDto.getCategory().equals(product.getCategory().getName())) {
+        if(productRequestDto.getCategory()!=null) {
             Category category = getCategoryFromDB(productRequestDto.getCategory());
             product.setCategory(category);
         }

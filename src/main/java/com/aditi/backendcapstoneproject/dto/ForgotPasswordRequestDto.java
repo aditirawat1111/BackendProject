@@ -13,5 +13,3 @@ public class ForgotPasswordRequestDto {
     @Email(message = "Invalid email format")
     private String email;
 }
-
-

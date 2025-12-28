@@ -19,7 +19,7 @@ public interface ProductService {
      */
     Page<Product> getAllProducts(Pageable pageable);
 
-    Product createProduct(String title, String description, String category, double price, String image);
+    Product createProduct(String title, String description, String category, Double price, String image);
 
     Product updateProduct(Long id, ProductRequestDto productRequestDto) throws ProductNotFoundException;
 

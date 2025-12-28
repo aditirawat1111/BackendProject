@@ -68,6 +68,9 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<ProfileResponseDto> getProfile(Authentication authentication)
             throws UserNotFoundException {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         String email = ((UserDetails) authentication.getPrincipal()).getUsername();
         ProfileResponseDto response = authenticationService.getProfile(email);
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -78,6 +81,9 @@ public class AuthController {
             @Valid @RequestBody UpdateProfileRequestDto request,
             Authentication authentication)
             throws UserNotFoundException {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         String email = ((UserDetails) authentication.getPrincipal()).getUsername();
         ProfileResponseDto response = authenticationService.updateProfile(email, request);
         return new ResponseEntity<>(response, HttpStatus.OK);

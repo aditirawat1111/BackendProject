@@ -10,6 +10,7 @@ import com.aditi.backendcapstoneproject.repository.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -33,6 +34,7 @@ public class OrderService {
         this.cartItemRepository = cartItemRepository;
     }
 
+    @Transactional
     public OrderResponseDto createOrder(User user, String deliveryAddress) throws EmptyCartException {
         Cart cart = cartRepository.findByUser(user)
                 .orElseThrow(() -> new EmptyCartException("Cart is empty"));
@@ -109,6 +111,7 @@ public class OrderService {
         return page.map(this::buildOrderResponse);
     }
 
+    @Transactional
     public OrderResponseDto updateOrderStatus(Long orderId, OrderStatus status) throws OrderNotFoundException {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order with id " + orderId + " not found"));

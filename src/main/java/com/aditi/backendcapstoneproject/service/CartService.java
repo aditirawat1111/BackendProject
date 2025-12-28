@@ -12,6 +12,7 @@ import com.aditi.backendcapstoneproject.repository.CartItemRepository;
 import com.aditi.backendcapstoneproject.repository.CartRepository;
 import com.aditi.backendcapstoneproject.repository.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -105,6 +106,7 @@ public class CartService {
         return buildCartResponse(cart);
     }
 
+    @Transactional
     public CartResponseDto clearCart(User user) {
         Cart cart = getOrCreateCart(user);
         cartItemRepository.deleteByCart(cart);

@@ -11,6 +11,7 @@ import com.aditi.backendcapstoneproject.model.User;
 import com.aditi.backendcapstoneproject.repository.OrderRepository;
 import com.aditi.backendcapstoneproject.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.UUID;
@@ -27,6 +28,7 @@ public class PaymentService {
         this.orderRepository = orderRepository;
     }
 
+    @Transactional
     public PaymentResponseDto createPayment(User user, PaymentRequestDto request) throws OrderNotFoundException {
         Order order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new OrderNotFoundException("Order with id " + request.getOrderId() + " not found"));

@@ -21,6 +21,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 
@@ -45,6 +46,7 @@ public class AuthenticationService {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
+    @Transactional
     public AuthResponseDto register(RegisterRequestDto request) throws UserAlreadyExistsException {
         // Check if user already exists
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -129,6 +131,7 @@ public class AuthenticationService {
         return ProfileResponseDto.from(user);
     }
 
+    @Transactional
     public ProfileResponseDto updateProfile(String email, UpdateProfileRequestDto request) throws UserNotFoundException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
@@ -149,6 +152,7 @@ public class AuthenticationService {
         return ProfileResponseDto.from(updatedUser);
     }
 
+    @Transactional
     public PasswordResetTokenResponseDto requestPasswordReset(ForgotPasswordRequestDto request)
             throws UserNotFoundException {
         User user = userRepository.findByEmail(request.getEmail())
@@ -173,6 +177,7 @@ public class AuthenticationService {
         return responseDto;
     }
 
+    @Transactional
     public void resetPassword(PasswordResetRequestDto request)
             throws InvalidPasswordResetTokenException {
         PasswordResetToken token = passwordResetTokenRepository.findByToken(request.getToken())

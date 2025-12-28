@@ -1,19 +1,19 @@
 CREATE TABLE cart
 (
-    id            BIGINT       NOT NULL,
+    id            BIGINT       NOT NULL AUTO_INCREMENT,
     created_at    datetime     NULL,
     last_modified datetime     NULL,
-    is_deleted    BIT(1)       NOT NULL,
+    is_deleted    BIT(1)       NOT NULL DEFAULT b'0',
     user_id       BIGINT       NULL,
     CONSTRAINT pk_cart PRIMARY KEY (id)
 );
 
 CREATE TABLE cart_item
 (
-    id            BIGINT   NOT NULL,
+    id            BIGINT   NOT NULL AUTO_INCREMENT,
     created_at    datetime NULL,
     last_modified datetime NULL,
-    is_deleted    BIT(1)   NOT NULL,
+    is_deleted    BIT(1)   NOT NULL DEFAULT b'0',
     quantity      INT      NULL,
     cart_id       BIGINT   NULL,
     product_id    BIGINT   NULL,
@@ -21,7 +21,7 @@ CREATE TABLE cart_item
 );
 
 ALTER TABLE cart
-    ADD CONSTRAINT FK_CART_ON_USER FOREIGN KEY (user_id) REFERENCES `user` (id);
+    ADD CONSTRAINT FK_CART_ON_USER FOREIGN KEY (user_id) REFERENCES user (id);
 
 ALTER TABLE cart_item
     ADD CONSTRAINT FK_CART_ITEM_ON_CART FOREIGN KEY (cart_id) REFERENCES cart (id);

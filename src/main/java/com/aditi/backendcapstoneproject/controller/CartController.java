@@ -27,19 +27,25 @@ public class CartController {
         this.userRepository = userRepository;
     }
 
-    @GetMapping
-    public ResponseEntity<CartResponseDto> getCart(Authentication authentication) {
-        User user = getCurrentUser(authentication);
-        CartResponseDto cart = cartService.getCart(user);
-        return new ResponseEntity<>(cart, HttpStatus.OK);
-    }
-
     @PostMapping("/items")
     public ResponseEntity<CartResponseDto> addItemToCart(
             @Valid @RequestBody AddToCartRequestDto request,
             Authentication authentication) throws ProductNotFoundException {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         User user = getCurrentUser(authentication);
         CartResponseDto cart = cartService.addItemToCart(user, request.getProductId(), request.getQuantity());
+        return new ResponseEntity<>(cart, HttpStatus.OK);
+    }
+
+    @GetMapping
+    public ResponseEntity<CartResponseDto> getCart(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        User user = getCurrentUser(authentication);
+        CartResponseDto cart = cartService.getCart(user);
         return new ResponseEntity<>(cart, HttpStatus.OK);
     }
 
@@ -48,6 +54,9 @@ public class CartController {
             @PathVariable Long itemId,
             @Valid @RequestBody UpdateCartItemRequestDto request,
             Authentication authentication) throws CartItemNotFoundException {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         User user = getCurrentUser(authentication);
         CartResponseDto cart = cartService.updateCartItem(user, itemId, request.getQuantity());
         return new ResponseEntity<>(cart, HttpStatus.OK);
@@ -57,6 +66,9 @@ public class CartController {
     public ResponseEntity<CartResponseDto> removeCartItem(
             @PathVariable Long itemId,
             Authentication authentication) throws CartItemNotFoundException {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         User user = getCurrentUser(authentication);
         CartResponseDto cart = cartService.removeCartItem(user, itemId);
         return new ResponseEntity<>(cart, HttpStatus.OK);
@@ -64,6 +76,9 @@ public class CartController {
 
     @DeleteMapping
     public ResponseEntity<CartResponseDto> clearCart(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         User user = getCurrentUser(authentication);
         CartResponseDto cart = cartService.clearCart(user);
         return new ResponseEntity<>(cart, HttpStatus.OK);
@@ -75,4 +90,3 @@ public class CartController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }
-
