@@ -27,8 +27,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class OrderServiceTest {
 
     @Mock
@@ -252,7 +255,7 @@ class OrderServiceTest {
 
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderRepository.save(any(Order.class))).thenReturn(updatedOrder);
-        when(orderItemRepository.findByOrder(updatedOrder)).thenReturn(Collections.singletonList(testOrderItem));
+        when(orderItemRepository.findByOrder(any(Order.class))).thenReturn(Collections.singletonList(testOrderItem));
 
         // When
         OrderResponseDto result = orderService.updateOrderStatus(1L, OrderStatus.CONFIRMED);

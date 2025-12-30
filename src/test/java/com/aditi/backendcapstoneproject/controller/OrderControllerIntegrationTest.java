@@ -1,6 +1,7 @@
 package com.aditi.backendcapstoneproject.controller;
 
 import com.aditi.backendcapstoneproject.dto.CreateOrderRequestDto;
+import com.aditi.backendcapstoneproject.enums.OrderStatus;
 import com.aditi.backendcapstoneproject.model.*;
 import com.aditi.backendcapstoneproject.repository.*;
 import com.aditi.backendcapstoneproject.service.JwtService;
@@ -184,6 +185,71 @@ class OrderControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orderId").value(orderId))
                 .andExpect(jsonPath("$.status").value("PENDING"));
+    }
+
+    @Test
+    void testUpdateOrderStatus_AsAdmin_Success() throws Exception {
+        // Given - first create an order as regular user
+        CreateOrderRequestDto requestDto = new CreateOrderRequestDto();
+        requestDto.setDeliveryAddress("123 Test Street");
+
+        String response = mockMvc.perform(post("/orders")
+                        .with(user(userDetails))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long orderId = objectMapper.readTree(response).get("orderId").asLong();
+
+        // And authenticate as admin for status update
+        User adminUser = new User();
+        adminUser.setEmail("admin@example.com");
+        adminUser.setPassword(passwordEncoder.encode("adminpass"));
+        adminUser.setName("Admin User");
+        adminUser.setRole("ADMIN");
+        adminUser.setCreatedAt(new Date());
+        adminUser.setLastModified(new Date());
+        adminUser.setDeleted(false);
+        userRepository.save(adminUser);
+
+        UserDetails adminDetails = org.springframework.security.core.userdetails.User.builder()
+                .username(adminUser.getEmail())
+                .password(adminUser.getPassword())
+                .authorities("ROLE_ADMIN")
+                .build();
+
+        // When & Then
+        mockMvc.perform(patch("/orders/{orderId}/status", orderId)
+                        .with(user(adminDetails))
+                        .param("status", OrderStatus.SHIPPED.name()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(orderId))
+                .andExpect(jsonPath("$.status").value("SHIPPED"));
+    }
+
+    @Test
+    void testUpdateOrderStatus_AsNonAdmin_Forbidden() throws Exception {
+        // Given - create an order as regular user
+        CreateOrderRequestDto requestDto = new CreateOrderRequestDto();
+        requestDto.setDeliveryAddress("123 Test Street");
+
+        String response = mockMvc.perform(post("/orders")
+                        .with(user(userDetails))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long orderId = objectMapper.readTree(response).get("orderId").asLong();
+
+        // When & Then - same non-admin user tries to update status
+        mockMvc.perform(patch("/orders/{orderId}/status", orderId)
+                        .with(user(userDetails))
+                        .param("status", OrderStatus.CANCELLED.name()))
+                .andExpect(status().isForbidden());
     }
 }
 

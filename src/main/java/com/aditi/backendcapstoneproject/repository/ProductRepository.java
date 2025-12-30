@@ -15,7 +15,7 @@ import java.util.Optional;
 //2nd argument=type of the primary key for the table;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    Optional<Product> findById(long id);
+    Optional<Product> findById(Long id);
 
     //Declarative Queries
     List<Product> findByCategory_Name(String categoryName);

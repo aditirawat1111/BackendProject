@@ -40,6 +40,15 @@ public class SecurityConfig {
                         .requestMatchers("/categories", "/categories/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                // ADD THIS SECTION BELOW
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"status\": \"Unauthorized\", \"message\": \"Full authentication is required to access this resource\"}");
+                        })
+                )
+                // END OF SECTION
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )

@@ -145,5 +145,82 @@ class CartControllerIntegrationTest {
         mockMvc.perform(get("/cart"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void testUpdateCartItem_Success() throws Exception {
+        // Given - first add an item
+        AddToCartRequestDto requestDto = new AddToCartRequestDto();
+        requestDto.setProductId(testProduct.getId());
+        requestDto.setQuantity(1);
+
+        String cartResponse = mockMvc.perform(post("/cart/items")
+                        .with(user(userDetails))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long itemId = com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+                .readTree(cartResponse)
+                .get("items").get(0).get("id").asLong();
+
+        com.aditi.backendcapstoneproject.dto.UpdateCartItemRequestDto updateRequest =
+                new com.aditi.backendcapstoneproject.dto.UpdateCartItemRequestDto();
+        updateRequest.setQuantity(3);
+
+        // When & Then
+        mockMvc.perform(put("/cart/items/{itemId}", itemId)
+                        .with(user(userDetails))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalItems").value(3));
+    }
+
+    @Test
+    void testRemoveCartItem_Success() throws Exception {
+        // Given - first add an item
+        AddToCartRequestDto requestDto = new AddToCartRequestDto();
+        requestDto.setProductId(testProduct.getId());
+        requestDto.setQuantity(1);
+
+        String cartResponse = mockMvc.perform(post("/cart/items")
+                        .with(user(userDetails))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long itemId = com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+                .readTree(cartResponse)
+                .get("items").get(0).get("id").asLong();
+
+        // When & Then
+        mockMvc.perform(delete("/cart/items/{itemId}", itemId)
+                        .with(user(userDetails)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalItems").value(0));
+    }
+
+    @Test
+    void testClearCart_Success() throws Exception {
+        // Given - first add an item
+        AddToCartRequestDto requestDto = new AddToCartRequestDto();
+        requestDto.setProductId(testProduct.getId());
+        requestDto.setQuantity(2);
+
+        mockMvc.perform(post("/cart/items")
+                        .with(user(userDetails))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)));
+
+        // When & Then
+        mockMvc.perform(delete("/cart")
+                        .with(user(userDetails)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalItems").value(0));
+    }
 }
 

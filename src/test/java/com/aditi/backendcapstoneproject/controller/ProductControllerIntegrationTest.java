@@ -1,9 +1,11 @@
 package com.aditi.backendcapstoneproject.controller;
 
+import com.aditi.backendcapstoneproject.dto.ProductRequestDto;
 import com.aditi.backendcapstoneproject.model.Category;
 import com.aditi.backendcapstoneproject.model.Product;
 import com.aditi.backendcapstoneproject.repository.CategoryRepository;
 import com.aditi.backendcapstoneproject.repository.ProductRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 
+import org.springframework.http.MediaType;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -32,6 +39,9 @@ class ProductControllerIntegrationTest {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
@@ -127,5 +137,66 @@ class ProductControllerIntegrationTest {
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content.length()").value(2));
     }
+
+    @Test
+    void testCreateProduct_Success() throws Exception {
+        // Given
+        ProductRequestDto requestDto = new ProductRequestDto();
+        requestDto.setName("Headphones");
+        requestDto.setDescription("Wireless headphones");
+        requestDto.setPrice(199.99);
+        requestDto.setImageUrl("https://example.com/headphones.jpg");
+        requestDto.setCategory("Electronics");
+
+        // When & Then
+        mockMvc.perform(post("/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.name").value("Headphones"))
+                .andExpect(jsonPath("$.price").value(199.99))
+                .andExpect(jsonPath("$.category").value("Electronics"));
+    }
+
+    @Test
+    void testUpdateProduct_Success() throws Exception {
+        // Given
+        Product existingProduct = productRepository.findAll().get(0);
+
+        ProductRequestDto requestDto = new ProductRequestDto();
+        requestDto.setName("Updated Laptop");
+        requestDto.setDescription("Updated description");
+        requestDto.setPrice(1099.99);
+        requestDto.setImageUrl("https://example.com/updated-laptop.jpg");
+        requestDto.setCategory(existingProduct.getCategory().getName());
+
+        // When & Then
+        mockMvc.perform(put("/products/{id}", existingProduct.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(existingProduct.getId()))
+                .andExpect(jsonPath("$.name").value("Updated Laptop"))
+                .andExpect(jsonPath("$.price").value(1099.99));
+    }
+
+    @Test
+    void testPartialUpdateProduct_Success() throws Exception {
+        // Given
+        Product existingProduct = productRepository.findAll().get(0);
+
+        ProductRequestDto requestDto = new ProductRequestDto();
+        requestDto.setPrice(899.99);
+
+        // When & Then
+        mockMvc.perform(patch("/products/{id}", existingProduct.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(existingProduct.getId()))
+                .andExpect(jsonPath("$.price").value(899.99));
+    }
+
 }
 

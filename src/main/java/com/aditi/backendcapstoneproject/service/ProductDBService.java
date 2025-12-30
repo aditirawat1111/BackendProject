@@ -136,6 +136,9 @@ public class ProductDBService implements ProductService {
     }
 
     public Category getCategoryFromDB(String name){
+        if(name == null || name.trim().isEmpty()){
+            throw new NullPointerException("Category name cannot be null or empty");
+        }
         Optional<Category> optionalCategory = categoryRepository.findByName(name);
         if(optionalCategory.isPresent()){
             return optionalCategory.get();
