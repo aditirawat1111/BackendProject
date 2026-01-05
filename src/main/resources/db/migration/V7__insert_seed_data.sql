@@ -66,9 +66,13 @@ VALUES
 
 -- Insert Test Users
 -- Password: Password123! (BCrypt hash)
-INSERT INTO `user` (id, name, email, password, phone_number, address, role, created_at, last_modified, is_deleted)
+-- Note: If login fails, the database may need to be recreated after table name fix (user -> users)
+INSERT INTO `users` (id, name, email, password, phone_number, address, role, created_at, last_modified, is_deleted)
 VALUES
     (1, 'John Doe', 'john.doe@example.com', '$2a$10$XptfskLsT9pLz.eN2vDLKOnV8GVjJVGXjZz3TLmp/N5E0vUWK.Wz2', '+1234567890', '123 Main St, New York, NY 10001', 'USER', NOW(), NOW(), b'0'),
     (2, 'Jane Smith', 'jane.smith@example.com', '$2a$10$XptfskLsT9pLz.eN2vDLKOnV8GVjJVGXjZz3TLmp/N5E0vUWK.Wz2', '+1234567891', '456 Oak Ave, Los Angeles, CA 90001', 'USER', NOW(), NOW(), b'0'),
-    (3, 'Admin User', 'admin@example.com', '$2a$10$XptfskLsT9pLz.eN2vDLKOnV8GVjJVGXjZz3TLmp/N5E0vUWK.Wz2', '+1234567892', '789 Admin Blvd, Chicago, IL 60601', 'ADMIN', NOW(), NOW(), b'0');
+    (3, 'Admin User', 'admin@example.com', '$2a$10$pzvNZfLyqnBzakXHg7a/buYzlhzhPSIYUN15ypUIqm5Ak/LdKI5L.', '+1234567892', '789 Admin Blvd, Chicago, IL 60601', 'ADMIN', NOW(), NOW(), b'0')
+ON DUPLICATE KEY UPDATE 
+    password = VALUES(password),
+    last_modified = NOW();
 

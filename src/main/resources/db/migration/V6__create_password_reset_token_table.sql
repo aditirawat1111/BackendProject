@@ -16,6 +16,6 @@ ALTER TABLE password_reset_token
     ADD CONSTRAINT uk_password_reset_token_token UNIQUE (token);
 
 ALTER TABLE password_reset_token
-    ADD CONSTRAINT FK_PASSWORD_RESET_TOKEN_ON_USER FOREIGN KEY (user_id) REFERENCES user (id);
+    ADD CONSTRAINT FK_PASSWORD_RESET_TOKEN_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);
 
 

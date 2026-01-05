@@ -22,11 +22,15 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 
 @Service
 public class AuthenticationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticationService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -48,8 +52,11 @@ public class AuthenticationService {
 
     @Transactional
     public AuthResponseDto register(RegisterRequestDto request) throws UserAlreadyExistsException {
+        logger.info("Attempting to register user with email: {}", request.getEmail());
+        
         // Check if user already exists
         if (userRepository.existsByEmail(request.getEmail())) {
+            logger.warn("Registration failed: User with email {} already exists", request.getEmail());
             throw new UserAlreadyExistsException("User with email " + request.getEmail() + " already exists");
         }
 
@@ -67,6 +74,7 @@ public class AuthenticationService {
 
         // Save user to database
         User savedUser = userRepository.save(user);
+        logger.info("User registered successfully with ID: {} and email: {}", savedUser.getId(), savedUser.getEmail());
 
         // Generate JWT token
         UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
@@ -89,6 +97,8 @@ public class AuthenticationService {
     }
 
     public AuthResponseDto login(LoginRequestDto request) throws InvalidCredentialsException {
+        logger.info("Login attempt for email: {}", request.getEmail());
+        
         try {
             // Authenticate user
             authenticationManager.authenticate(
@@ -100,7 +110,12 @@ public class AuthenticationService {
 
             // User authenticated successfully, load user details
             User user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
+                    .orElseThrow(() -> {
+                        logger.warn("Login failed: User not found with email: {}", request.getEmail());
+                        return new InvalidCredentialsException("Invalid email or password");
+                    });
+
+            logger.info("User logged in successfully: {} with role: {}", user.getEmail(), user.getRole());
 
             // Generate JWT token
             UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
@@ -121,6 +136,7 @@ public class AuthenticationService {
 
             return response;
         } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            logger.warn("Login failed: Invalid credentials for email: {}", request.getEmail());
             throw new InvalidCredentialsException("Invalid email or password");
         }
     }

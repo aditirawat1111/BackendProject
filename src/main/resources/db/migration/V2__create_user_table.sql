@@ -1,4 +1,4 @@
-CREATE TABLE `user`
+CREATE TABLE `users`
 (
     id            BIGINT       NOT NULL,
     name          VARCHAR(255) NULL,
@@ -10,9 +10,9 @@ CREATE TABLE `user`
     phone_number  VARCHAR(255) NULL,
     address       VARCHAR(255) NULL,
     role          VARCHAR(50)  NULL,
-    CONSTRAINT pk_user PRIMARY KEY (id)
+    CONSTRAINT pk_users PRIMARY KEY (id)
 );
 
-ALTER TABLE `user`
-    ADD CONSTRAINT uk_user_email UNIQUE (email);
+ALTER TABLE `users`
+    ADD CONSTRAINT uk_users_email UNIQUE (email);
 

@@ -4,6 +4,7 @@ import com.aditi.backendcapstoneproject.dto.CartResponseDto;
 import com.aditi.backendcapstoneproject.dto.CartItemResponseDto;
 import com.aditi.backendcapstoneproject.exception.CartItemNotFoundException;
 import com.aditi.backendcapstoneproject.exception.ProductNotFoundException;
+import com.aditi.backendcapstoneproject.exception.UserNotFoundException;
 import com.aditi.backendcapstoneproject.model.Cart;
 import com.aditi.backendcapstoneproject.model.CartItem;
 import com.aditi.backendcapstoneproject.model.Product;
@@ -11,6 +12,7 @@ import com.aditi.backendcapstoneproject.model.User;
 import com.aditi.backendcapstoneproject.repository.CartItemRepository;
 import com.aditi.backendcapstoneproject.repository.CartRepository;
 import com.aditi.backendcapstoneproject.repository.ProductRepository;
+import com.aditi.backendcapstoneproject.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,21 +27,31 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
 
     public CartService(CartRepository cartRepository,
                        CartItemRepository cartItemRepository,
-                       ProductRepository productRepository) {
+                       ProductRepository productRepository,
+                       UserRepository userRepository) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
+        this.userRepository = userRepository;
     }
 
-    public CartResponseDto getCart(User user) {
+    private User getUserByEmail(String email) throws UserNotFoundException {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+    }
+
+    public CartResponseDto getCart(String email) throws UserNotFoundException {
+        User user = getUserByEmail(email);
         Cart cart = getOrCreateCart(user);
         return buildCartResponse(cart);
     }
 
-    public CartResponseDto addItemToCart(User user, Long productId, Integer quantity) throws ProductNotFoundException {
+    public CartResponseDto addItemToCart(String email, Long productId, Integer quantity) throws ProductNotFoundException, UserNotFoundException {
+        User user = getUserByEmail(email);
         Cart cart = getOrCreateCart(user);
 
         Product product = productRepository.findById(productId)
@@ -68,7 +80,8 @@ public class CartService {
         return buildCartResponse(cart);
     }
 
-    public CartResponseDto updateCartItem(User user, Long itemId, Integer quantity) throws CartItemNotFoundException {
+    public CartResponseDto updateCartItem(String email, Long itemId, Integer quantity) throws CartItemNotFoundException, UserNotFoundException {
+        User user = getUserByEmail(email);
         Cart cart = getOrCreateCart(user);
 
         CartItem cartItem = cartItemRepository.findById(itemId)
@@ -88,7 +101,8 @@ public class CartService {
         return buildCartResponse(cart);
     }
 
-    public CartResponseDto removeCartItem(User user, Long itemId) throws CartItemNotFoundException {
+    public CartResponseDto removeCartItem(String email, Long itemId) throws CartItemNotFoundException, UserNotFoundException {
+        User user = getUserByEmail(email);
         Cart cart = getOrCreateCart(user);
 
         CartItem cartItem = cartItemRepository.findById(itemId)
@@ -107,7 +121,8 @@ public class CartService {
     }
 
     @Transactional
-    public CartResponseDto clearCart(User user) {
+    public CartResponseDto clearCart(String email) throws UserNotFoundException {
+        User user = getUserByEmail(email);
         Cart cart = getOrCreateCart(user);
         cartItemRepository.deleteByCart(cart);
 

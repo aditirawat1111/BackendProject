@@ -2,6 +2,8 @@
 
 A Spring Boot-based **e-commerce backend** that provides end-to-end APIs for user management, product catalog, shopping cart, orders, and payments, secured with JWT-based authentication.
 
+This project is designed to look and behave like a **real-world production backend**: it uses layered architecture, strong security practices, database migrations, test coverage, and is **deployment-ready to AWS**.
+
 ---
 
 ## Technology Stack
@@ -15,6 +17,17 @@ A Spring Boot-based **e-commerce backend** that provides end-to-end APIs for use
 - **Flyway** (database migrations)
 - **Lombok**
 - **Maven**
+
+---
+
+## Key Highlights (For Interviewers)
+
+- **Architecture**: Clean layered architecture (Controller → Service → Repository → Database) with DTO mapping and global exception handling.
+- **Security**: JWT-based stateless auth, BCrypt passwords, role-based access (USER / ADMIN), and resource-ownership checks.
+- **Domain Coverage**: End-to-end e-commerce flows – products, cart, orders, payments, password reset, and order tracking.
+- **Data & Migrations**: MySQL with Flyway migrations, seed data, and soft-delete support via a shared `BaseModel`.
+- **Quality**: Unit and integration tests with H2, structured logging across layers, and pagination on all heavy read endpoints.
+- **Deployment-Ready**: Built and documented for deployment on AWS (Elastic Beanstalk / EC2 + RDS) with separate production configuration.
 
 ---
 
@@ -79,6 +92,8 @@ A Spring Boot-based **e-commerce backend** that provides end-to-end APIs for use
 - ✅ Layered architecture (Controller → Service → Repository → Database).
 - ✅ Global exception handling with standardized error responses.
 - ✅ DTO-based request/response mapping.
+- ✅ Comprehensive logging (services, payments, orders, auth, exception handler) using SLF4J/Logback.
+- ✅ Soft-delete friendly entity model via a shared `BaseModel` (id, timestamps, `isDeleted`).
 
 ---
 
@@ -105,16 +120,30 @@ For a detailed breakdown of each package and class, see `PROJECT_STRUCTURE.md`.
 
 - **Authentication**: JWT-based, stateless sessions.
 - **Password hashing**: BCrypt via Spring Security.
+- **Roles**: `USER` (default) and `ADMIN`, embedded in JWT and enforced via method-level security for admin-only operations.
 - **Public endpoints** (no JWT required):
   - `POST /auth/register`
   - `POST /auth/login`
+  - `POST /auth/forgot-password`
+  - `POST /auth/reset-password`
   - `GET /products`
   - `GET /products/{id}`
   - `GET /products/search`
   - `GET /products/by-category`
+  - `GET /categories`
+  - API docs (Swagger/OpenAPI) endpoints if enabled (e.g. `/swagger-ui/**`, `/v3/api-docs/**`).
 - **Protected endpoints**: All cart, order, payment, profile, and most other APIs (require `Authorization: Bearer <token>`).
 - **Admin-only**:
   - `PATCH /orders/{orderId}/status`.
+
+### Demo Admin User (Development / Local Only)
+
+Flyway seed data creates a convenient admin user for local testing:
+
+- **Email**: `admin@example.com`
+- **Password**: `Password123!`
+
+Use this account to test admin-only operations (like order status updates). In a real deployment, create secure admin accounts and rotate credentials.
 
 ---
 
@@ -175,7 +204,7 @@ For a detailed breakdown of each package and class, see `PROJECT_STRUCTURE.md`.
 - MySQL 8.0+
 - Maven 3.6+
 
-### Database Setup
+### Database Setup (Local)
 
 ```sql
 CREATE DATABASE CapstoneBackendProject;
@@ -201,15 +230,56 @@ java -jar target/backend-capstone-project-0.0.1-SNAPSHOT.jar
 
 By default, the app runs on `http://localhost:8080`.
 
+### Deployment (AWS-Friendly)
+
+The project is structured to be easily deployed to **AWS Elastic Beanstalk** or **AWS EC2 + RDS**:
+
+- Build a JAR with `mvn clean package`.
+- Use a separate `application-production.properties` (or env variables) for:
+  - RDS connection (`spring.datasource.url`, `spring.datasource.username`, `spring.datasource.password`)
+  - JWT settings (`jwt.secret`, `jwt.expiration`)
+  - Flyway production configuration.
+- For Elastic Beanstalk:
+  - Upload the JAR, configure environment variables for DB and JWT, and let Beanstalk manage EC2, scaling, and load balancing.
+- For EC2:
+  - Copy the JAR to the instance and run with  
+    `java -jar -Dspring.profiles.active=production backend-capstone-project-0.0.1-SNAPSHOT.jar`.
+
+For a step-by-step, production-grade walkthrough, see `DEPLOYMENT_GUIDE.md`.
+
 ---
 
 ## Testing
 
-Run all tests:
+This project has both **unit tests (services)** and **integration tests (controllers)** using **JUnit 5, Mockito, Spring Boot Test, spring-security-test, H2**, and **JaCoCo** for coverage.
+
+### Run All Tests
 
 ```bash
-mvn test
+mvn clean test
 ```
+
+### Run with Test Profile (H2, no Flyway on tests)
+
+```bash
+mvn clean test -Dspring.profiles.active=test
+```
+
+### Run a Specific Test Class
+
+```bash
+mvn test -Dtest=ProductDBServiceTest
+```
+
+### Generate Coverage Report
+
+```bash
+mvn clean test jacoco:report
+```
+
+Open `target/site/jacoco/index.html` in a browser to view coverage details.
+
+See `TESTING_SETUP.md` for a full breakdown of test strategy, structure, and annotations.
 
 ---
 
@@ -217,17 +287,19 @@ mvn test
 
 - ✅ Project setup with Spring Boot 3.4.5.
 - ✅ MySQL integration with Flyway migrations.
-- ✅ Full product catalog (CRUD, search, category browsing).
-- ✅ Pagination, filtering, and sorting for product listing.
+- ✅ Full product catalog (CRUD, search, category browsing, case-insensitive search).
+- ✅ Pagination, filtering, and sorting for product and order listing.
 - ✅ User registration, login, JWT authentication, and profile management.
+- ✅ Role-based access (USER / ADMIN) with admin-only operations.
 - ✅ Shopping cart (user-specific, JWT-protected).
 - ✅ Order creation, history, and status tracking (with admin updates).
-- ✅ Pagination, filtering, and sorting for order listing.
-- ✅ Payment model and basic payment recording with receipt-style responses.
-- ✅ Centralized exception handling and validation.
+- ✅ Payment model and payment recording with receipt-style responses and automatic order status update.
+- ✅ Password reset flow with token-based reset.
+- ✅ Centralized exception handling, validation, and structured logging.
 
 For more implementation details, see:
-- `PROJECT_STRUCTURE.md` – current package-level breakdown.
+- `PROJECT_STRUCTURE.md` – package-level breakdown.
+- `PROJECT_FLOW.md` – end-to-end flows (auth, cart, orders, payments, security, logging).
 - `PAGINATION_FILTER_SORT_EXPLANATION.md` – deep dive into pagination/filter/sort behavior.
 
 ---
@@ -237,11 +309,23 @@ For more implementation details, see:
 - [ ] Social login (Google, etc.) using OAuth2.
 - [ ] Integration with a real payment gateway (Stripe/Razorpay/etc.) instead of mocked success.
 - [ ] Logout / token revocation and refresh token flow.
-- [ ] API documentation with Swagger/OpenAPI.
-- [ ] Soft delete and audit improvements.
-- [ ] Additional logging, metrics, and monitoring.
-- [ ] Comprehensive unit and integration test coverage.
+- [ ] Rich API documentation and UI via Swagger/OpenAPI, published in production.
+- [ ] Soft delete filtering at repository/query level and audit trail improvements.
+- [ ] Centralized, production-grade logging/monitoring (ELK / Prometheus + Grafana).
+- [ ] Additional admin-facing endpoints and dashboards (manage users, products, and global orders).
+- [ ] Further increase in automated test coverage and performance tests.
 
 ---
 
-*This README reflects the current implemented backend as of the latest development updates.*
+## How to Explore This Project (Recommended Reading)
+
+- `PROJECT_STRUCTURE.md` – detailed explanation of packages, entities, and repositories.
+- `PROJECT_FLOW.md` – complete user journey and architecture analysis (scalability, security, logging).
+- `AUTHENTICATION_AUTHORIZATION_EXPLAINED.md` – deep dive into authentication vs authorization decisions.
+- `ORDER_MANAGEMENT_EXPLANATION.md`, `SHOPPING_CART_EXPLANATION.md`, `PAYMENT_EXPLANATION.md` – domain-specific design notes.
+- `DEPLOYMENT_GUIDE.md` – AWS deployment steps and cloud architecture notes.
+- `TESTING_SETUP.md` – test design, tools, and coverage.
+
+---
+
+*This README reflects the current implemented backend as of the latest development updates and is written to highlight design and engineering decisions for reviewers and interviewers.*

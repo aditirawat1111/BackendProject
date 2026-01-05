@@ -5,12 +5,15 @@ import com.aditi.backendcapstoneproject.dto.OrderResponseDto;
 import com.aditi.backendcapstoneproject.enums.OrderStatus;
 import com.aditi.backendcapstoneproject.exception.EmptyCartException;
 import com.aditi.backendcapstoneproject.exception.OrderNotFoundException;
+import com.aditi.backendcapstoneproject.exception.UserNotFoundException;
 import com.aditi.backendcapstoneproject.model.*;
 import com.aditi.backendcapstoneproject.repository.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.List;
@@ -19,30 +22,49 @@ import java.util.stream.Collectors;
 @Service
 public class OrderService {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
+
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final UserRepository userRepository;
 
     public OrderService(OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
                         CartRepository cartRepository,
-                        CartItemRepository cartItemRepository) {
+                        CartItemRepository cartItemRepository,
+                        UserRepository userRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
+        this.userRepository = userRepository;
+    }
+
+    private User getUserByEmail(String email) throws UserNotFoundException {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
     }
 
     @Transactional
-    public OrderResponseDto createOrder(User user, String deliveryAddress) throws EmptyCartException {
+    public OrderResponseDto createOrder(String email, String deliveryAddress) throws EmptyCartException, UserNotFoundException {
+        logger.info("Creating order for user: {}", email);
+        
+        User user = getUserByEmail(email);
         Cart cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new EmptyCartException("Cart is empty"));
+                .orElseThrow(() -> {
+                    logger.warn("Order creation failed: Cart is empty for user: {}", email);
+                    return new EmptyCartException("Cart is empty");
+                });
 
         List<CartItem> cartItems = cartItemRepository.findByCart(cart);
         if (cartItems.isEmpty()) {
+            logger.warn("Order creation failed: Cart has no items for user: {}", email);
             throw new EmptyCartException("Cart is empty");
         }
+
+        logger.debug("Creating order with {} items from cart for user: {}", cartItems.size(), email);
 
         Order order = new Order();
         order.setUser(user);
@@ -54,6 +76,7 @@ public class OrderService {
         order.setDeleted(false);
 
         order = orderRepository.save(order);
+        logger.debug("Order created with ID: {}", order.getId());
 
         double totalAmount = 0.0;
 
@@ -79,10 +102,14 @@ public class OrderService {
         cart.setLastModified(new Date());
         cartRepository.save(cart);
 
+        logger.info("Order created successfully with ID: {} and total amount: {} for user: {}", 
+                order.getId(), totalAmount, email);
+
         return buildOrderResponse(order);
     }
 
-    public OrderResponseDto getOrderById(User user, Long orderId) throws OrderNotFoundException {
+    public OrderResponseDto getOrderById(String email, Long orderId) throws OrderNotFoundException, UserNotFoundException {
+        User user = getUserByEmail(email);
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order with id " + orderId + " not found"));
 
@@ -93,14 +120,16 @@ public class OrderService {
         return buildOrderResponse(order);
     }
 
-    public List<OrderResponseDto> getOrders(User user) {
+    public List<OrderResponseDto> getOrders(String email) throws UserNotFoundException {
+        User user = getUserByEmail(email);
         List<Order> orders = orderRepository.findByUser(user);
         return orders.stream()
                 .map(this::buildOrderResponse)
                 .collect(Collectors.toList());
     }
 
-    public Page<OrderResponseDto> getOrders(User user, Pageable pageable, OrderStatus status) {
+    public Page<OrderResponseDto> getOrders(String email, Pageable pageable, OrderStatus status) throws UserNotFoundException {
+        User user = getUserByEmail(email);
         Page<Order> page;
         if (status != null) {
             page = orderRepository.findByUserAndStatus(user, status, pageable);
@@ -113,12 +142,21 @@ public class OrderService {
 
     @Transactional
     public OrderResponseDto updateOrderStatus(Long orderId, OrderStatus status) throws OrderNotFoundException {
+        logger.info("Updating order status: Order ID: {}, New Status: {}", orderId, status);
+        
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException("Order with id " + orderId + " not found"));
+                .orElseThrow(() -> {
+                    logger.warn("Order status update failed: Order with id {} not found", orderId);
+                    return new OrderNotFoundException("Order with id " + orderId + " not found");
+                });
 
+        OrderStatus oldStatus = order.getStatus();
         order.setStatus(status);
         order.setLastModified(new Date());
         orderRepository.save(order);
+
+        logger.info("Order status updated successfully: Order ID: {}, Status changed from {} to {}", 
+                orderId, oldStatus, status);
 
         return buildOrderResponse(order);
     }

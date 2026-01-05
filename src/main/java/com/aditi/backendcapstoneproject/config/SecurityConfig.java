@@ -36,19 +36,32 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/register", "/auth/login", "/auth/forgot-password", "/auth/reset-password").permitAll()
-                        .requestMatchers("/products", "/products/**").permitAll()
-                        .requestMatchers("/categories", "/categories/**").permitAll()
+                        // Allow GET requests to products and categories (public browsing)
+                        .requestMatchers("GET", "/products", "/products/**").permitAll()
+                        .requestMatchers("GET", "/categories", "/categories/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                // ADD THIS SECTION BELOW
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json");
-                            response.getWriter().write("{\"status\": \"Unauthorized\", \"message\": \"Full authentication is required to access this resource\"}");
+                            String timestamp = java.time.Instant.now().toString();
+                            response.getWriter().write(String.format(
+                                    "{\"status\": \"Unauthorized\", \"message\": \"Full authentication is required to access this resource\", \"timestamp\": \"%s\"}",
+                                    timestamp
+                            ));
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            String timestamp = java.time.Instant.now().toString();
+                            response.getWriter().write(String.format(
+                                    "{\"status\": \"Access Denied\", \"message\": \"You do not have permission to access this resource\", \"timestamp\": \"%s\"}",
+                                    timestamp
+                            ));
                         })
                 )
-                // END OF SECTION
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
