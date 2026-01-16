@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -139,6 +140,7 @@ class ProductControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void testCreateProduct_Success() throws Exception {
         // Given
         ProductRequestDto requestDto = new ProductRequestDto();
@@ -160,6 +162,7 @@ class ProductControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void testUpdateProduct_Success() throws Exception {
         // Given
         Product existingProduct = productRepository.findAll().get(0);
@@ -182,6 +185,7 @@ class ProductControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void testPartialUpdateProduct_Success() throws Exception {
         // Given
         Product existingProduct = productRepository.findAll().get(0);

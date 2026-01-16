@@ -82,7 +82,7 @@ public class PaymentService {
         logger.info("Payment created successfully with ID: {}, transaction ID: {}, amount: {}", 
                 payment.getId(), payment.getTransactionId(), payment.getAmount());
 
-        // Automatically update order status to CONFIRMED when payment succeeds
+        // Automatically update order status to "CONFIRMED" when payment succeeds
         if (payment.getStatus() == PaymentStatus.SUCCESS && order.getStatus() == OrderStatus.PENDING) {
             logger.info("Payment successful, updating order status from PENDING to CONFIRMED for order ID: {}", 
                     order.getId());

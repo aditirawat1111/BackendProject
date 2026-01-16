@@ -2,6 +2,7 @@ package com.aditi.backendcapstoneproject.service;
 
 import com.aditi.backendcapstoneproject.dto.PaymentRequestDto;
 import com.aditi.backendcapstoneproject.dto.PaymentResponseDto;
+import com.aditi.backendcapstoneproject.enums.OrderStatus;
 import com.aditi.backendcapstoneproject.enums.PaymentMethod;
 import com.aditi.backendcapstoneproject.enums.PaymentStatus;
 import com.aditi.backendcapstoneproject.exception.OrderNotFoundException;
@@ -80,6 +81,10 @@ class PaymentServiceTest {
 
     @Test
     void testCreatePayment_Success() throws OrderNotFoundException, UserNotFoundException {
+        // 1. ENSURE STATUSES MATCH THE IF-CONDITION
+        testOrder.setStatus(OrderStatus.PENDING);     // Must be PENDING
+        testPayment.setStatus(PaymentStatus.SUCCESS); // Must be SUCCESS
+
         // Given
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(paymentRepository.save(any(Payment.class))).thenReturn(testPayment);
