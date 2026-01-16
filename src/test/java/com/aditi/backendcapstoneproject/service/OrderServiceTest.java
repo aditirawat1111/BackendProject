@@ -4,6 +4,7 @@ import com.aditi.backendcapstoneproject.dto.OrderResponseDto;
 import com.aditi.backendcapstoneproject.enums.OrderStatus;
 import com.aditi.backendcapstoneproject.exception.EmptyCartException;
 import com.aditi.backendcapstoneproject.exception.OrderNotFoundException;
+import com.aditi.backendcapstoneproject.exception.UserNotFoundException;
 import com.aditi.backendcapstoneproject.model.*;
 import com.aditi.backendcapstoneproject.repository.*;
 import org.junit.jupiter.api.BeforeEach;
