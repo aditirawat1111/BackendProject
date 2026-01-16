@@ -46,6 +46,9 @@ class OrderServiceTest {
     @Mock
     private CartItemRepository cartItemRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private OrderService orderService;
 
@@ -92,10 +95,13 @@ class OrderServiceTest {
         testOrderItem.setProduct(testProduct);
         testOrderItem.setQuantity(2);
         testOrderItem.setPrice(999.99);
+        
+        // Mock userRepository.findByEmail to return testUser
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
     }
 
     @Test
-    void testCreateOrder_Success() throws EmptyCartException {
+    void testCreateOrder_Success() throws EmptyCartException, UserNotFoundException {
         // Given
         when(cartRepository.findByUser(testUser)).thenReturn(Optional.of(testCart));
         when(cartItemRepository.findByCart(testCart)).thenReturn(Collections.singletonList(testCartItem));
@@ -106,7 +112,7 @@ class OrderServiceTest {
         when(orderItemRepository.findByOrder(testOrder)).thenReturn(Collections.singletonList(testOrderItem));
 
         // When
-        OrderResponseDto result = orderService.createOrder(testUser, "123 Test St");
+        OrderResponseDto result = orderService.createOrder(testUser.getEmail(), "123 Test St");
 
         // Then
         assertThat(result).isNotNull();
@@ -125,7 +131,7 @@ class OrderServiceTest {
         when(cartRepository.findByUser(testUser)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> orderService.createOrder(testUser, "123 Test St"))
+        assertThatThrownBy(() -> orderService.createOrder(testUser.getEmail(), "123 Test St"))
                 .isInstanceOf(EmptyCartException.class)
                 .hasMessageContaining("Cart is empty");
         verify(cartRepository, times(1)).findByUser(testUser);
@@ -139,7 +145,7 @@ class OrderServiceTest {
         when(cartItemRepository.findByCart(testCart)).thenReturn(Collections.emptyList());
 
         // When & Then
-        assertThatThrownBy(() -> orderService.createOrder(testUser, "123 Test St"))
+        assertThatThrownBy(() -> orderService.createOrder(testUser.getEmail(), "123 Test St"))
                 .isInstanceOf(EmptyCartException.class)
                 .hasMessageContaining("Cart is empty");
         verify(cartRepository, times(1)).findByUser(testUser);
@@ -148,13 +154,13 @@ class OrderServiceTest {
     }
 
     @Test
-    void testGetOrderById_Success() throws OrderNotFoundException {
+    void testGetOrderById_Success() throws OrderNotFoundException, UserNotFoundException {
         // Given
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderItemRepository.findByOrder(testOrder)).thenReturn(Collections.singletonList(testOrderItem));
 
         // When
-        OrderResponseDto result = orderService.getOrderById(testUser, 1L);
+        OrderResponseDto result = orderService.getOrderById(testUser.getEmail(), 1L);
 
         // Then
         assertThat(result).isNotNull();
@@ -170,7 +176,7 @@ class OrderServiceTest {
         when(orderRepository.findById(999L)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> orderService.getOrderById(testUser, 999L))
+        assertThatThrownBy(() -> orderService.getOrderById(testUser.getEmail(), 999L))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessageContaining("Order with id 999 not found");
         verify(orderRepository, times(1)).findById(999L);
@@ -186,21 +192,21 @@ class OrderServiceTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
 
         // When & Then
-        assertThatThrownBy(() -> orderService.getOrderById(testUser, 1L))
+        assertThatThrownBy(() -> orderService.getOrderById(testUser.getEmail(), 1L))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessageContaining("Order does not belong to user");
         verify(orderRepository, times(1)).findById(1L);
     }
 
     @Test
-    void testGetOrders() {
+    void testGetOrders() throws UserNotFoundException {
         // Given
         List<Order> orders = Arrays.asList(testOrder);
         when(orderRepository.findByUser(testUser)).thenReturn(orders);
         when(orderItemRepository.findByOrder(testOrder)).thenReturn(Collections.singletonList(testOrderItem));
 
         // When
-        List<OrderResponseDto> result = orderService.getOrders(testUser);
+        List<OrderResponseDto> result = orderService.getOrders(testUser.getEmail());
 
         // Then
         assertThat(result).isNotNull();
@@ -210,7 +216,7 @@ class OrderServiceTest {
     }
 
     @Test
-    void testGetOrders_WithPagination_NoFilter() {
+    void testGetOrders_WithPagination_NoFilter() throws UserNotFoundException {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
         Page<Order> orderPage = new PageImpl<>(Arrays.asList(testOrder), pageable, 1);
@@ -218,7 +224,7 @@ class OrderServiceTest {
         when(orderItemRepository.findByOrder(testOrder)).thenReturn(Collections.singletonList(testOrderItem));
 
         // When
-        Page<OrderResponseDto> result = orderService.getOrders(testUser, pageable, null);
+        Page<OrderResponseDto> result = orderService.getOrders(testUser.getEmail(), pageable, null);
 
         // Then
         assertThat(result).isNotNull();
@@ -228,7 +234,7 @@ class OrderServiceTest {
     }
 
     @Test
-    void testGetOrders_WithPagination_WithStatusFilter() {
+    void testGetOrders_WithPagination_WithStatusFilter() throws UserNotFoundException {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
         Page<Order> orderPage = new PageImpl<>(Arrays.asList(testOrder), pageable, 1);
@@ -236,7 +242,7 @@ class OrderServiceTest {
         when(orderItemRepository.findByOrder(testOrder)).thenReturn(Collections.singletonList(testOrderItem));
 
         // When
-        Page<OrderResponseDto> result = orderService.getOrders(testUser, pageable, OrderStatus.PENDING);
+        Page<OrderResponseDto> result = orderService.getOrders(testUser.getEmail(), pageable, OrderStatus.PENDING);
 
         // Then
         assertThat(result).isNotNull();

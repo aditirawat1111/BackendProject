@@ -8,26 +8,55 @@ This project is designed to look and behave like a **real-world production backe
 
 ## Technology Stack
 
-- **Java 17**
-- **Spring Boot 3.4.5**
-- **Spring Web**
-- **Spring Data JPA**
-- **Spring Security (JWT, BCrypt)**
-- **MySQL Database**
-- **Flyway** (database migrations)
-- **Lombok**
-- **Maven**
+- **Language & Platform**
+  - Java 17
+  - Spring Boot 3.4.5
+
+- **Core Frameworks**
+  - Spring Web (REST APIs)
+  - Spring Data JPA (Hibernate)
+  - Spring Security (JWT, BCrypt)
+  - Bean Validation (Jakarta Validation)
+
+- **Database & Migrations**
+  - MySQL 8.x
+  - Flyway (versioned SQL migrations & seed data)
+  - H2 (in-memory DB for tests)
+
+- **Security & Tokens**
+  - JJWT (JSON Web Token library)
+  - BCrypt password hashing
+
+- **Documentation & Tooling**
+  - OpenAPI/Swagger (auto-generated API docs & Swagger UI)
+  - Maven (build & dependency management)
+  - Lombok (boilerplate reduction)
+
+- **Logging & Observability**
+  - SLF4J logging facade
+  - Logback (Spring Boot default logger)
+
+- **Testing & Quality**
+  - JUnit 5 (Jupiter)
+  - Mockito
+  - AssertJ, Hamcrest, JSONAssert, JsonPath
+  - Spring Boot Test, spring-security-test
+  - JaCoCo (code coverage)
+
+- **Deployment**
+  - AWS-ready architecture (Elastic Beanstalk / EC2 + RDS)
 
 ---
 
-## Key Highlights (For Interviewers)
+## Key Highlights
 
 - **Architecture**: Clean layered architecture (Controller → Service → Repository → Database) with DTO mapping and global exception handling.
 - **Security**: JWT-based stateless auth, BCrypt passwords, role-based access (USER / ADMIN), and resource-ownership checks.
 - **Domain Coverage**: End-to-end e-commerce flows – products, cart, orders, payments, password reset, and order tracking.
 - **Data & Migrations**: MySQL with Flyway migrations, seed data, and soft-delete support via a shared `BaseModel`.
 - **Quality**: Unit and integration tests with H2, structured logging across layers, and pagination on all heavy read endpoints.
-- **Deployment-Ready**: Built and documented for deployment on AWS (Elastic Beanstalk / EC2 + RDS) with separate production configuration.
+- **API Documentation**: OpenAPI/Swagger-based documentation and interactive Swagger UI for exploring and testing endpoints.
+- **Deployment-Ready**: Built and documented for deployment on AWS (Elastic Beanstalk / EC2 + RDS) with dedicated production configuration.
 
 ---
 
@@ -113,6 +142,34 @@ src/main/java/com/aditi/backendcapstoneproject/
 ```
 
 For a detailed breakdown of each package and class, see `PROJECT_STRUCTURE.md`.
+
+---
+
+## Advanced Capabilities
+
+- **OpenAPI/Swagger Documentation**
+  - Auto-generated OpenAPI specification and Swagger UI for all major endpoints.
+  - Supports exploring requests/responses, trying out authenticated calls, and onboarding new consumers quickly.
+
+- **Pagination, Filtering & Sorting**
+  - Consistent `page`, `size`, `sort`, and filter query parameters across products and orders.
+  - Case-insensitive search on product name/description with combined category + keyword filters.
+
+- **Role-Based Access Control**
+  - `USER` and `ADMIN` roles embedded in JWT and enforced via Spring Security and method-level annotations.
+  - Resource-ownership checks ensure users can only access their own carts, orders, and payments.
+
+- **Soft Delete & Audit-Friendly Model**
+  - Shared `BaseModel` providing `id`, timestamps, and `isDeleted` flag for all entities.
+  - Designed to support audit trails and soft delete without losing historical records.
+
+- **Logging & Error Handling**
+  - SLF4J/Logback-based logging in services, controllers, filters, and exception handlers.
+  - Centralized `GlobalExceptionHandler` returning consistent error responses with appropriate HTTP status codes.
+
+- **Scalability & Deployment**
+  - Stateless JWT authentication for easy horizontal scaling.
+  - Database migrations and seed data managed via Flyway, suitable for CI/CD and multi-environment setups.
 
 ---
 
@@ -283,41 +340,7 @@ See `TESTING_SETUP.md` for a full breakdown of test strategy, structure, and ann
 
 ---
 
-## Current Progress
-
-- ✅ Project setup with Spring Boot 3.4.5.
-- ✅ MySQL integration with Flyway migrations.
-- ✅ Full product catalog (CRUD, search, category browsing, case-insensitive search).
-- ✅ Pagination, filtering, and sorting for product and order listing.
-- ✅ User registration, login, JWT authentication, and profile management.
-- ✅ Role-based access (USER / ADMIN) with admin-only operations.
-- ✅ Shopping cart (user-specific, JWT-protected).
-- ✅ Order creation, history, and status tracking (with admin updates).
-- ✅ Payment model and payment recording with receipt-style responses and automatic order status update.
-- ✅ Password reset flow with token-based reset.
-- ✅ Centralized exception handling, validation, and structured logging.
-
-For more implementation details, see:
-- `PROJECT_STRUCTURE.md` – package-level breakdown.
-- `PROJECT_FLOW.md` – end-to-end flows (auth, cart, orders, payments, security, logging).
-- `PAGINATION_FILTER_SORT_EXPLANATION.md` – deep dive into pagination/filter/sort behavior.
-
----
-
-## Remaining / Future Enhancements
-
-- [ ] Social login (Google, etc.) using OAuth2.
-- [ ] Integration with a real payment gateway (Stripe/Razorpay/etc.) instead of mocked success.
-- [ ] Logout / token revocation and refresh token flow.
-- [ ] Rich API documentation and UI via Swagger/OpenAPI, published in production.
-- [ ] Soft delete filtering at repository/query level and audit trail improvements.
-- [ ] Centralized, production-grade logging/monitoring (ELK / Prometheus + Grafana).
-- [ ] Additional admin-facing endpoints and dashboards (manage users, products, and global orders).
-- [ ] Further increase in automated test coverage and performance tests.
-
----
-
-## How to Explore This Project (Recommended Reading)
+## How to Explore This Project
 
 - `PROJECT_STRUCTURE.md` – detailed explanation of packages, entities, and repositories.
 - `PROJECT_FLOW.md` – complete user journey and architecture analysis (scalability, security, logging).
@@ -328,4 +351,4 @@ For more implementation details, see:
 
 ---
 
-*This README reflects the current implemented backend as of the latest development updates and is written to highlight design and engineering decisions for reviewers and interviewers.*
+*This README reflects the current implemented backend and highlights the core design and engineering decisions behind it.*

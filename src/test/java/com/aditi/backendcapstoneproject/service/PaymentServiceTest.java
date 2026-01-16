@@ -11,6 +11,8 @@ import com.aditi.backendcapstoneproject.model.Payment;
 import com.aditi.backendcapstoneproject.model.User;
 import com.aditi.backendcapstoneproject.repository.OrderRepository;
 import com.aditi.backendcapstoneproject.repository.PaymentRepository;
+import com.aditi.backendcapstoneproject.repository.UserRepository;
+import com.aditi.backendcapstoneproject.exception.UserNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +36,9 @@ class PaymentServiceTest {
 
     @Mock
     private OrderRepository orderRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private PaymentService paymentService;
@@ -68,17 +73,20 @@ class PaymentServiceTest {
         paymentRequestDto = new PaymentRequestDto();
         paymentRequestDto.setOrderId(1L);
         paymentRequestDto.setMethod(PaymentMethod.CREDIT_CARD);
+        
+        // Mock userRepository.findByEmail to return testUser
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
     }
 
     @Test
-    void testCreatePayment_Success() throws OrderNotFoundException {
+    void testCreatePayment_Success() throws OrderNotFoundException, UserNotFoundException {
         // Given
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(paymentRepository.save(any(Payment.class))).thenReturn(testPayment);
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
 
         // When
-        PaymentResponseDto result = paymentService.createPayment(testUser, paymentRequestDto);
+        PaymentResponseDto result = paymentService.createPayment(testUser.getEmail(), paymentRequestDto);
 
         // Then
         assertThat(result).isNotNull();
@@ -99,7 +107,7 @@ class PaymentServiceTest {
         paymentRequestDto.setOrderId(999L);
 
         // When & Then
-        assertThatThrownBy(() -> paymentService.createPayment(testUser, paymentRequestDto))
+        assertThatThrownBy(() -> paymentService.createPayment(testUser.getEmail(), paymentRequestDto))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessageContaining("Order with id 999 not found");
         verify(orderRepository, times(1)).findById(999L);
@@ -116,7 +124,7 @@ class PaymentServiceTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
 
         // When & Then
-        assertThatThrownBy(() -> paymentService.createPayment(testUser, paymentRequestDto))
+        assertThatThrownBy(() -> paymentService.createPayment(testUser.getEmail(), paymentRequestDto))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessageContaining("Order does not belong to user");
         verify(orderRepository, times(1)).findById(1L);
@@ -130,7 +138,7 @@ class PaymentServiceTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
 
         // When & Then
-        assertThatThrownBy(() -> paymentService.createPayment(testUser, paymentRequestDto))
+        assertThatThrownBy(() -> paymentService.createPayment(testUser.getEmail(), paymentRequestDto))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Order amount is invalid for payment");
         verify(orderRepository, times(1)).findById(1L);
@@ -138,12 +146,12 @@ class PaymentServiceTest {
     }
 
     @Test
-    void testGetPayment_Success() throws PaymentNotFoundException {
+    void testGetPayment_Success() throws PaymentNotFoundException, UserNotFoundException {
         // Given
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(testPayment));
 
         // When
-        PaymentResponseDto result = paymentService.getPayment(testUser, 1L);
+        PaymentResponseDto result = paymentService.getPayment(testUser.getEmail(), 1L);
 
         // Then
         assertThat(result).isNotNull();
@@ -161,7 +169,7 @@ class PaymentServiceTest {
         when(paymentRepository.findById(999L)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> paymentService.getPayment(testUser, 999L))
+        assertThatThrownBy(() -> paymentService.getPayment(testUser.getEmail(), 999L))
                 .isInstanceOf(PaymentNotFoundException.class)
                 .hasMessageContaining("Payment with id 999 not found");
         verify(paymentRepository, times(1)).findById(999L);
@@ -178,7 +186,7 @@ class PaymentServiceTest {
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(testPayment));
 
         // When & Then
-        assertThatThrownBy(() -> paymentService.getPayment(testUser, 1L))
+        assertThatThrownBy(() -> paymentService.getPayment(testUser.getEmail(), 1L))
                 .isInstanceOf(PaymentNotFoundException.class)
                 .hasMessageContaining("Payment does not belong to user");
         verify(paymentRepository, times(1)).findById(1L);
