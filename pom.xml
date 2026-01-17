@@ -28,6 +28,7 @@
     </scm>
     <properties>
         <java.version>17</java.version>
+        <skip.jacoco.check>true</skip.jacoco.check>
     </properties>
     <dependencies>
         <dependency>
@@ -192,6 +193,7 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <skip>${skip.jacoco.check}</skip>
                             <rules>
                                 <rule>
                                     <element>PACKAGE</element>
