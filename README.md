@@ -2,7 +2,7 @@
 
 A Spring Boot-based **e-commerce backend** that provides end-to-end APIs for user management, product catalog, shopping cart, orders, and payments, secured with JWT-based authentication.
 
-This project is designed to look and behave like a **real-world production backend**: it uses layered architecture, strong security practices, database migrations, test coverage, and is **deployment-ready to AWS**.
+This project is designed to look and behave like a **real-world production backend**: it uses layered architecture, strong security practices, database migrations, test coverage, and is **deployment-ready to Microsoft Azure App Service**.
 
 ---
 
@@ -56,7 +56,12 @@ This project is designed to look and behave like a **real-world production backe
 - **Data & Migrations**: MySQL with Flyway migrations, seed data, and soft-delete support via a shared `BaseModel`.
 - **Quality**: Unit and integration tests with H2, structured logging across layers, and pagination on all heavy read endpoints.
 - **API Documentation**: OpenAPI/Swagger-based documentation and interactive Swagger UI for exploring and testing endpoints.
-- **Deployment-Ready**: Built and documented for deployment on AWS (Elastic Beanstalk / EC2 + RDS) with dedicated production configuration.
+- **Deployment-Ready**: Built and documented for deployment on Azure App Service with production configuration.
+
+### Live Deployment
+- **App Service URL:** `https://app-springboot-dev-eastasia-001.azurewebsites.net`
+- **Custom Domain:** `https://aditirawat.me`
+- **Swagger UI:** `https://aditirawat.me/swagger-ui/index.html`
 
 ---
 
@@ -140,10 +145,6 @@ src/main/java/com/aditi/backendcapstoneproject/
 ├── repository/                             # Spring Data JPA repositories
 └── service/                                # Business services (Authentication, Product, Cart, Order, Payment, JWT)
 ```
-
-For a detailed breakdown of each package and class, see `PROJECT_STRUCTURE.md`.
-
----
 
 ## Advanced Capabilities
 
@@ -287,22 +288,18 @@ java -jar target/backend-capstone-project-0.0.1-SNAPSHOT.jar
 
 By default, the app runs on `http://localhost:8080`.
 
-### Deployment (AWS-Friendly)
+### Deployment (Azure App Service)
 
-The project is structured to be easily deployed to **AWS Elastic Beanstalk** or **AWS EC2 + RDS**:
-
-- Build a JAR with `mvn clean package`.
-- Use a separate `application-production.properties` (or env variables) for:
-  - RDS connection (`spring.datasource.url`, `spring.datasource.username`, `spring.datasource.password`)
-  - JWT settings (`jwt.secret`, `jwt.expiration`)
-  - Flyway production configuration.
-- For Elastic Beanstalk:
-  - Upload the JAR, configure environment variables for DB and JWT, and let Beanstalk manage EC2, scaling, and load balancing.
-- For EC2:
-  - Copy the JAR to the instance and run with  
-    `java -jar -Dspring.profiles.active=production backend-capstone-project-0.0.1-SNAPSHOT.jar`.
-
-For a step-by-step, production-grade walkthrough, see `DEPLOYMENT_GUIDE.md`.
+- Build: `mvn clean package`
+- Deploy the generated JAR to Azure App Service.
+- Configure App Settings (environment variables):
+  - `SPRING_DATASOURCE_URL` (Azure MySQL JDBC URL)
+  - `SPRING_DATASOURCE_USERNAME`
+  - `SPRING_DATASOURCE_PASSWORD`
+  - `JWT_SECRET`, `JWT_EXPIRATION` (optional overrides)
+  - `PORT` is provided by Azure; `server.port` already respects it.
+- Custom domain: DNS (A/CNAME + TXT) pointed to App Service with managed certificate; live at `https://aditirawat.me`.
+- Swagger UI (live): `https://aditirawat.me/swagger-ui/index.html`
 
 ---
 
@@ -337,17 +334,6 @@ mvn clean test jacoco:report
 Open `target/site/jacoco/index.html` in a browser to view coverage details.
 
 See `TESTING_SETUP.md` for a full breakdown of test strategy, structure, and annotations.
-
----
-
-## How to Explore This Project
-
-- `PROJECT_STRUCTURE.md` – detailed explanation of packages, entities, and repositories.
-- `PROJECT_FLOW.md` – complete user journey and architecture analysis (scalability, security, logging).
-- `AUTHENTICATION_AUTHORIZATION_EXPLAINED.md` – deep dive into authentication vs authorization decisions.
-- `ORDER_MANAGEMENT_EXPLANATION.md`, `SHOPPING_CART_EXPLANATION.md`, `PAYMENT_EXPLANATION.md` – domain-specific design notes.
-- `DEPLOYMENT_GUIDE.md` – AWS deployment steps and cloud architecture notes.
-- `TESTING_SETUP.md` – test design, tools, and coverage.
 
 ---
 
