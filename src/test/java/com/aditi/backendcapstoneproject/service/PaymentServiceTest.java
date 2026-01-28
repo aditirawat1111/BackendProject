@@ -14,6 +14,8 @@ import com.aditi.backendcapstoneproject.repository.OrderRepository;
 import com.aditi.backendcapstoneproject.repository.PaymentRepository;
 import com.aditi.backendcapstoneproject.repository.UserRepository;
 import com.aditi.backendcapstoneproject.exception.UserNotFoundException;
+import com.aditi.backendcapstoneproject.service.StripePaymentService;
+import com.stripe.model.PaymentIntent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +42,9 @@ class PaymentServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private StripePaymentService stripePaymentService;
 
     @InjectMocks
     private PaymentService paymentService;
@@ -75,20 +80,28 @@ class PaymentServiceTest {
         paymentRequestDto.setOrderId(1L);
         paymentRequestDto.setMethod(PaymentMethod.CREDIT_CARD);
         
-        // Mock userRepository.findByEmail to return testUser
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+        // Mock userRepository.findByEmail to return testUser (lenient because not all tests need it)
+        lenient().when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
     }
 
     @Test
-    void testCreatePayment_Success() throws OrderNotFoundException, UserNotFoundException {
-        // 1. ENSURE STATUSES MATCH THE IF-CONDITION
-        testOrder.setStatus(OrderStatus.PENDING);     // Must be PENDING
-        testPayment.setStatus(PaymentStatus.SUCCESS); // Must be SUCCESS
-
+    void testCreatePayment_Success_DelegatesToStripe() throws Exception {
         // Given
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
+
+        // Mock Stripe customer and payment intent
+        when(stripePaymentService.createOrRetrieveCustomer(anyString(), anyString()))
+                .thenReturn("cus_123");
+        PaymentIntent paymentIntent = mock(PaymentIntent.class);
+        when(paymentIntent.getId()).thenReturn("pi_123");
+        when(paymentIntent.getClientSecret()).thenReturn("secret_123");
+        when(stripePaymentService.createPaymentIntent(anyLong(), anyDouble(), anyString(), anyString(), anyString()))
+                .thenReturn(paymentIntent);
+
+        // Mock repository save
+        testPayment.setStatus(PaymentStatus.PENDING);
+        when(paymentRepository.findByOrder_Id(1L)).thenReturn(Optional.empty());
         when(paymentRepository.save(any(Payment.class))).thenReturn(testPayment);
-        when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
 
         // When
         PaymentResponseDto result = paymentService.createPayment(testUser.getEmail(), paymentRequestDto);
@@ -99,10 +112,16 @@ class PaymentServiceTest {
         assertThat(result.getOrderId()).isEqualTo(1L);
         assertThat(result.getAmount()).isEqualTo(1999.98);
         assertThat(result.getMethod()).isEqualTo(PaymentMethod.CREDIT_CARD);
-        assertThat(result.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
-        verify(orderRepository, times(1)).findById(1L);
+        // Initial status should be PENDING until Stripe confirms via webhook
+        assertThat(result.getStatus()).isEqualTo(PaymentStatus.PENDING);
+
+        // createPayment calls orderRepository.findById once, and makePayment calls it again
+        verify(orderRepository, times(2)).findById(1L);
+        verify(stripePaymentService, times(1))
+                .createOrRetrieveCustomer(eq(testUser.getEmail()), anyString());
+        verify(stripePaymentService, times(1))
+                .createPaymentIntent(eq(testOrder.getId()), eq(1999.98), anyString(), anyString(), anyString());
         verify(paymentRepository, times(1)).save(any(Payment.class));
-        verify(orderRepository, times(1)).save(any(Order.class));
     }
 
     @Test
@@ -148,6 +167,31 @@ class PaymentServiceTest {
                 .hasMessageContaining("Order amount is invalid for payment");
         verify(orderRepository, times(1)).findById(1L);
         verify(paymentRepository, never()).save(any(Payment.class));
+    }
+
+    @Test
+    void testHandleSuccessfulStripePaymentIntent_UpdatesStatusAndOrder() throws Exception {
+        // Given
+        testOrder.setStatus(OrderStatus.PENDING);
+        testPayment.setStatus(PaymentStatus.PENDING);
+        testPayment.setTransactionId("pi_123");
+
+        when(paymentRepository.findByTransactionId("pi_123")).thenReturn(Optional.of(testPayment));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PaymentIntent paymentIntent = mock(PaymentIntent.class);
+        when(paymentIntent.getId()).thenReturn("pi_123");
+
+        // When
+        paymentService.handleSuccessfulStripePaymentIntent(paymentIntent);
+
+        // Then
+        assertThat(testPayment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
+        assertThat(testOrder.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        verify(paymentRepository, times(1)).findByTransactionId("pi_123");
+        verify(paymentRepository, times(1)).save(any(Payment.class));
+        verify(orderRepository, times(1)).save(any(Order.class));
     }
 
     @Test

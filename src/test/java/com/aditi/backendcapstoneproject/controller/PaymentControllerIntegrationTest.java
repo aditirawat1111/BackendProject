@@ -3,14 +3,19 @@ package com.aditi.backendcapstoneproject.controller;
 import com.aditi.backendcapstoneproject.dto.PaymentRequestDto;
 import com.aditi.backendcapstoneproject.enums.OrderStatus;
 import com.aditi.backendcapstoneproject.enums.PaymentMethod;
+import com.aditi.backendcapstoneproject.enums.PaymentStatus;
 import com.aditi.backendcapstoneproject.model.*;
 import com.aditi.backendcapstoneproject.repository.*;
+import com.aditi.backendcapstoneproject.service.StripePaymentService;
+import com.aditi.backendcapstoneproject.exception.StripePaymentException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stripe.model.PaymentIntent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -53,6 +61,9 @@ class PaymentControllerIntegrationTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private StripePaymentService stripePaymentService;
 
     private User testUser;
     private Order testOrder;
@@ -126,6 +137,23 @@ class PaymentControllerIntegrationTest {
         orderItem.setLastModified(new Date());
         orderItem.setDeleted(false);
         orderItemRepository.save(orderItem);
+
+        // Default Stripe mocks used by /payments endpoint (which delegates to Stripe flow)
+        try {
+            when(stripePaymentService.createOrRetrieveCustomer(anyString(), anyString()))
+                    .thenReturn("cus_123");
+        } catch (StripePaymentException e) {
+            throw new RuntimeException(e);
+        }
+        PaymentIntent paymentIntent = mock(PaymentIntent.class);
+        when(paymentIntent.getId()).thenReturn("pi_123");
+        when(paymentIntent.getClientSecret()).thenReturn("secret_123");
+        try {
+            when(stripePaymentService.createPaymentIntent(anyLong(), anyDouble(), anyString(), anyString(), anyString()))
+                    .thenReturn(paymentIntent);
+        } catch (StripePaymentException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -145,7 +173,8 @@ class PaymentControllerIntegrationTest {
                 .andExpect(jsonPath("$.orderId").value(testOrder.getId()))
                 .andExpect(jsonPath("$.amount").value(1999.98))
                 .andExpect(jsonPath("$.method").value("CREDIT_CARD"))
-                .andExpect(jsonPath("$.status").value("SUCCESS"));
+                // Initial Stripe payment is PENDING until confirmed via webhook
+                .andExpect(jsonPath("$.status").value(PaymentStatus.PENDING.name()));
     }
 
     @Test
