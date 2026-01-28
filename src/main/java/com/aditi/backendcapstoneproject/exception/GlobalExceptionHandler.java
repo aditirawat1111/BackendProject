@@ -176,4 +176,34 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(StripePaymentException.class)
+    public ResponseEntity<ErrorResponseDto> handleStripePaymentException(StripePaymentException exception) {
+        logger.error("Stripe payment error: {}", exception.getMessage(), exception);
+        ErrorResponseDto errorResponseDto = buildErrorResponse(
+                "Payment Processing Error",
+                "An error occurred while processing your payment. Please try again or contact support."
+        );
+        return new ResponseEntity<>(errorResponseDto, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponseDto> handleIllegalArgumentException(IllegalArgumentException exception) {
+        logger.warn("Invalid argument: {}", exception.getMessage());
+        ErrorResponseDto errorResponseDto = buildErrorResponse(
+                "Invalid Request",
+                exception.getMessage()
+        );
+        return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponseDto> handleIllegalStateException(IllegalStateException exception) {
+        logger.warn("Invalid state: {}", exception.getMessage());
+        ErrorResponseDto errorResponseDto = buildErrorResponse(
+                "Invalid State",
+                exception.getMessage()
+        );
+        return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
+    }
 }

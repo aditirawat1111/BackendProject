@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .requestMatchers("GET", "/products", "/products/**").permitAll()
                         .requestMatchers("GET", "/categories", "/categories/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**").permitAll()
+                        .requestMatchers("/payments/stripe/webhook").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
