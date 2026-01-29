@@ -19,6 +19,8 @@ import com.aditi.backendcapstoneproject.repository.PaymentRepository;
 import com.aditi.backendcapstoneproject.repository.UserRepository;
 import com.stripe.model.PaymentIntent;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,6 +116,7 @@ public class PaymentService {
         return responseDto;
     }
 
+    @Cacheable(cacheNames = "payments", key = "#email + ':' + #paymentId")
     public PaymentResponseDto getPayment(String email, Long paymentId) throws PaymentNotFoundException, UserNotFoundException {
         User user = getUserByEmail(email);
         Payment payment = paymentRepository.findById(paymentId)
@@ -248,6 +251,7 @@ public class PaymentService {
      * Update payment status from Stripe webhook
      */
     @Transactional
+    @CacheEvict(cacheNames = "payments", allEntries = true)
     public void updatePaymentStatusFromStripe(String stripePaymentIntentId, PaymentStatus status) 
             throws PaymentNotFoundException {
         logger.info("Updating payment status from Stripe webhook: paymentIntent={}, status={}", 

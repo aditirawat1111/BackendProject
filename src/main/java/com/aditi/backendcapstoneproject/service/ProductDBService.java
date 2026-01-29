@@ -6,6 +6,9 @@ import com.aditi.backendcapstoneproject.model.Category;
 import com.aditi.backendcapstoneproject.model.Product;
 import com.aditi.backendcapstoneproject.repository.CategoryRepository;
 import com.aditi.backendcapstoneproject.repository.ProductRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ public class ProductDBService implements ProductService {
     }
 
     @Override
+    @Cacheable(cacheNames = "productsById", key = "#id")
     public Product getProductsById(Long id) throws ProductNotFoundException {
         Optional<Product> optionalProduct=productRepository.findById(id);
         if(optionalProduct.isEmpty()){
@@ -35,6 +39,7 @@ public class ProductDBService implements ProductService {
     }
 
     @Override
+    @Cacheable(cacheNames = "productsAll")
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
@@ -46,6 +51,12 @@ public class ProductDBService implements ProductService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "productsAll", allEntries = true),
+            @CacheEvict(cacheNames = "productsById", allEntries = true),
+            @CacheEvict(cacheNames = "productsByCategory", allEntries = true),
+            @CacheEvict(cacheNames = "productsSearch", allEntries = true)
+    })
     public Product createProduct(String name, String description, String category, Double price, String imageUrl) {
 
         Product product=new Product();
@@ -62,6 +73,12 @@ public class ProductDBService implements ProductService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "productsAll", allEntries = true),
+            @CacheEvict(cacheNames = "productsById", key = "#id"),
+            @CacheEvict(cacheNames = "productsByCategory", allEntries = true),
+            @CacheEvict(cacheNames = "productsSearch", allEntries = true)
+    })
     public Product updateProduct(Long id, ProductRequestDto productRequestDto) throws ProductNotFoundException {
         Product product=productRepository.findById(id)
                 .orElseThrow(()->new ProductNotFoundException("The Product with id "+id+" doesn't exist"));
@@ -79,6 +96,12 @@ public class ProductDBService implements ProductService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "productsAll", allEntries = true),
+            @CacheEvict(cacheNames = "productsById", key = "#id"),
+            @CacheEvict(cacheNames = "productsByCategory", allEntries = true),
+            @CacheEvict(cacheNames = "productsSearch", allEntries = true)
+    })
     public Product partialUpdateProduct(Long id, ProductRequestDto productRequestDto) throws ProductNotFoundException {
         Product product=productRepository.findById(id)
                 .orElseThrow(()-> new ProductNotFoundException("The Product with id "+id+" doesn't exist"));
@@ -104,6 +127,7 @@ public class ProductDBService implements ProductService {
 
 
     @Override
+    @Cacheable(cacheNames = "productsSearch", key = "#keyword == null ? 'ALL' : #keyword.trim().toLowerCase()")
     public List<Product> searchProducts(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return productRepository.findAll();
@@ -120,6 +144,7 @@ public class ProductDBService implements ProductService {
     }
 
     @Override
+    @Cacheable(cacheNames = "productsByCategory", key = "#categoryName == null ? 'ALL' : #categoryName.trim().toLowerCase()")
     public List<Product> getProductsByCategory(String categoryName) {
         if (categoryName == null || categoryName.trim().isEmpty()) {
             return productRepository.findAll();

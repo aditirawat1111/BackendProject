@@ -13,6 +13,8 @@ import com.aditi.backendcapstoneproject.repository.CartItemRepository;
 import com.aditi.backendcapstoneproject.repository.CartRepository;
 import com.aditi.backendcapstoneproject.repository.ProductRepository;
 import com.aditi.backendcapstoneproject.repository.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,12 +46,14 @@ public class CartService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
     }
 
+    @Cacheable(cacheNames = "carts", key = "#email")
     public CartResponseDto getCart(String email) throws UserNotFoundException {
         User user = getUserByEmail(email);
         Cart cart = getOrCreateCart(user);
         return buildCartResponse(cart);
     }
 
+    @CacheEvict(cacheNames = "carts", key = "#email")
     public CartResponseDto addItemToCart(String email, Long productId, Integer quantity) throws ProductNotFoundException, UserNotFoundException {
         User user = getUserByEmail(email);
         Cart cart = getOrCreateCart(user);
@@ -80,6 +84,7 @@ public class CartService {
         return buildCartResponse(cart);
     }
 
+    @CacheEvict(cacheNames = "carts", key = "#email")
     public CartResponseDto updateCartItem(String email, Long itemId, Integer quantity) throws CartItemNotFoundException, UserNotFoundException {
         User user = getUserByEmail(email);
         Cart cart = getOrCreateCart(user);
@@ -101,6 +106,7 @@ public class CartService {
         return buildCartResponse(cart);
     }
 
+    @CacheEvict(cacheNames = "carts", key = "#email")
     public CartResponseDto removeCartItem(String email, Long itemId) throws CartItemNotFoundException, UserNotFoundException {
         User user = getUserByEmail(email);
         Cart cart = getOrCreateCart(user);
@@ -121,6 +127,7 @@ public class CartService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "carts", key = "#email")
     public CartResponseDto clearCart(String email) throws UserNotFoundException {
         User user = getUserByEmail(email);
         Cart cart = getOrCreateCart(user);

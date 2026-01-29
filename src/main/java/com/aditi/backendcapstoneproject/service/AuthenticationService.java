@@ -16,6 +16,8 @@ import com.aditi.backendcapstoneproject.model.PasswordResetToken;
 import com.aditi.backendcapstoneproject.model.User;
 import com.aditi.backendcapstoneproject.repository.PasswordResetTokenRepository;
 import com.aditi.backendcapstoneproject.repository.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -51,6 +53,7 @@ public class AuthenticationService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "profiles", key = "#request.email", condition = "#request != null && #request.email != null")
     public AuthResponseDto register(RegisterRequestDto request) throws UserAlreadyExistsException {
         logger.info("Attempting to register user with email: {}", request.getEmail());
         
@@ -141,6 +144,7 @@ public class AuthenticationService {
         }
     }
 
+    @Cacheable(cacheNames = "profiles", key = "#email")
     public ProfileResponseDto getProfile(String email) throws UserNotFoundException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
@@ -148,6 +152,7 @@ public class AuthenticationService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "profiles", key = "#email")
     public ProfileResponseDto updateProfile(String email, UpdateProfileRequestDto request) throws UserNotFoundException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
@@ -194,6 +199,7 @@ public class AuthenticationService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "profiles", allEntries = true)
     public void resetPassword(PasswordResetRequestDto request)
             throws InvalidPasswordResetTokenException {
         PasswordResetToken token = passwordResetTokenRepository.findByToken(request.getToken())

@@ -13,6 +13,7 @@ import com.aditi.backendcapstoneproject.service.PaymentService;
 import com.aditi.backendcapstoneproject.util.SecurityUtils;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
+import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.net.Webhook;
 import io.swagger.v3.oas.annotations.Operation;
@@ -130,9 +131,16 @@ public class PaymentController {
 
         // Handle the event - delegate business logic to service layer
         if ("payment_intent.succeeded".equals(event.getType())) {
-            PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
-                    .getObject().orElse(null);
-            paymentService.handleSuccessfulStripePaymentIntent(paymentIntent);
+            EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
+            PaymentIntent paymentIntent = null;
+
+            if (dataObjectDeserializer.getObject().isPresent()) {
+                paymentIntent = (PaymentIntent) dataObjectDeserializer.getObject().get();
+                paymentService.handleSuccessfulStripePaymentIntent(paymentIntent);
+            } else {
+                // This is where your code is failing right now
+                logger.error("Failed to deserialize PaymentIntent. Event ID: {}. Check Stripe API version compatibility.", event.getId());
+            }
         } else if ("payment_intent.payment_failed".equals(event.getType())) {
             PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
                     .getObject().orElse(null);

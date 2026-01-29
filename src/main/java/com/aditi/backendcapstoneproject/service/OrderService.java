@@ -8,6 +8,8 @@ import com.aditi.backendcapstoneproject.exception.OrderNotFoundException;
 import com.aditi.backendcapstoneproject.exception.UserNotFoundException;
 import com.aditi.backendcapstoneproject.model.*;
 import com.aditi.backendcapstoneproject.repository.*;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -48,6 +50,7 @@ public class OrderService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"orders", "orderById"}, allEntries = true)
     public OrderResponseDto createOrder(String email, String deliveryAddress) throws EmptyCartException, UserNotFoundException {
         logger.info("Creating order for user: {}", email);
         
@@ -108,6 +111,7 @@ public class OrderService {
         return buildOrderResponse(order);
     }
 
+    @Cacheable(cacheNames = "orderById", key = "#email + ':' + #orderId")
     public OrderResponseDto getOrderById(String email, Long orderId) throws OrderNotFoundException, UserNotFoundException {
         User user = getUserByEmail(email);
         Order order = orderRepository.findById(orderId)
@@ -120,6 +124,7 @@ public class OrderService {
         return buildOrderResponse(order);
     }
 
+    @Cacheable(cacheNames = "orders", key = "#email")
     public List<OrderResponseDto> getOrders(String email) throws UserNotFoundException {
         User user = getUserByEmail(email);
         List<Order> orders = orderRepository.findByUser(user);
@@ -141,6 +146,7 @@ public class OrderService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {"orders", "orderById"}, allEntries = true)
     public OrderResponseDto updateOrderStatus(Long orderId, OrderStatus status) throws OrderNotFoundException {
         logger.info("Updating order status: Order ID: {}, New Status: {}", orderId, status);
         

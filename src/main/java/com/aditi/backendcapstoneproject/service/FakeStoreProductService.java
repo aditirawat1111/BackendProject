@@ -5,6 +5,7 @@ import com.aditi.backendcapstoneproject.dto.FakeStoreProductRequestDto;
 import com.aditi.backendcapstoneproject.dto.ProductRequestDto;
 import com.aditi.backendcapstoneproject.exception.ProductNotFoundException;
 import com.aditi.backendcapstoneproject.model.Product;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,7 @@ public class FakeStoreProductService implements ProductService{
     }
 
     @Override
+    @Cacheable(cacheNames = "fakestoreProductsById", key = "#id")
     public Product getProductsById(Long id) throws ProductNotFoundException {
         FakeStoreProductDto fakeStoreProductDto=restTemplate.getForObject(
                 "https://fakestoreapi.com/products/" + id, FakeStoreProductDto.class);
@@ -37,6 +39,7 @@ public class FakeStoreProductService implements ProductService{
     }
 
     @Override
+    @Cacheable(cacheNames = "fakestoreProductsAll")
     public List<Product> getAllProducts() {
         FakeStoreProductDto[] fakeStoreProductDtos = restTemplate.getForObject(
                 "https://fakestoreapi.com/products", FakeStoreProductDto[].class
