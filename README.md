@@ -18,6 +18,11 @@ This project is designed to look and behave like a **real-world production backe
   - Spring Security (JWT, BCrypt)
   - Bean Validation (Jakarta Validation)
 
+- **Caching & Performance**
+  - Spring Cache abstraction
+  - Redis (production cache) for hot data (products, carts, profiles, orders, payments, external FakeStore products)
+  - Simple in-memory cache for tests (no Redis required for CI)
+
 - **Database & Migrations**
   - MySQL 8.x
   - Flyway (versioned SQL migrations & seed data)
@@ -43,8 +48,13 @@ This project is designed to look and behave like a **real-world production backe
   - Spring Boot Test, spring-security-test
   - JaCoCo (code coverage)
 
+- **Scheduling & Background Jobs**
+  - Spring Scheduling (`@EnableScheduling`)
+  - Quartz-backed CRON job for periodic Stripe payment status synchronization
+
 - **Deployment**
-  - AWS-ready architecture (Elastic Beanstalk / EC2 + RDS)
+  - Azure App Service (live deployment) with external MySQL and cloud-managed Redis-compatible cache
+  - 12-factor style configuration using environment variables
 
 ---
 
@@ -55,6 +65,7 @@ This project is designed to look and behave like a **real-world production backe
 - **Domain Coverage**: End-to-end e-commerce flows – products, cart, orders, payments, password reset, and order tracking.
 - **Data & Migrations**: MySQL with Flyway migrations, seed data, and soft-delete support via a shared `BaseModel`.
 - **Quality**: Unit and integration tests with H2, structured logging across layers, and pagination on all heavy read endpoints.
+- **Performance & Caching**: Redis-backed caching for read-heavy endpoints with a clear eviction strategy and a test-friendly, in-memory cache profile.
 - **API Documentation**: OpenAPI/Swagger-based documentation and interactive Swagger UI for exploring and testing endpoints.
 - **Deployment-Ready**: Built and documented for deployment on Azure App Service with production configuration.
 
@@ -83,6 +94,9 @@ This project is designed to look and behave like a **real-world production backe
   - Get product by ID.
   - Get all products.
   - Create, update (PUT), and partial update (PATCH) products.
+- ✅ Multi-source product data:
+  - Primary product store in MySQL (via `ProductDBService`).
+  - Optional integration with the public Fake Store API via `FakeStoreProductService` (used for demonstrations and external data).
 - ✅ Category-based product listing:
   - `GET /products/by-category?category={name}`.
 - ✅ Search:
@@ -120,8 +134,21 @@ This project is designed to look and behave like a **real-world production backe
 - ✅ Payment security:
   - All payment endpoints are JWT-protected.
   - `PaymentStatus` tracks payment lifecycle.
+- ✅ Stripe integration:
+  - Stripe Java SDK used for payment intent creation and webhook handling.
+  - Webhook endpoint at `/payments/stripe/webhook` for asynchronous confirmation.
+  - Scheduled Stripe sync job (configurable via `stripe.sync.*` properties) keeps payment state in sync with Stripe.
 
-### 6. Infrastructure & Cross-Cutting Concerns
+### 6. Caching & Performance
+- ✅ Redis-based caching in production:
+  - Caches product lookups, product lists, category queries, search results, user profiles, carts, orders, and payments.
+  - Centralized invalidation strategy using `@CacheEvict` to keep cached data consistent after writes.
+- ✅ Transparent caching via Spring Cache:
+  - `@Cacheable`, `@CacheEvict`, and `@Caching` used at the service layer with meaningful cache names.
+- ✅ Test-friendly cache profile:
+  - Test profile (`application-test.properties`) switches to `spring.cache.type=simple` (in-memory) and disables Redis auto-configuration so tests never depend on a running Redis instance.
+
+### 7. Infrastructure & Cross-Cutting Concerns
 - ✅ MySQL + Flyway migrations for schema management (`category`, `product`, `user`, `cart`, `cart_item`, `order`, `order_item`, `payment`, `password_reset_token`).
 - ✅ Layered architecture (Controller → Service → Repository → Database).
 - ✅ Global exception handling with standardized error responses.
@@ -169,8 +196,9 @@ src/main/java/com/aditi/backendcapstoneproject/
   - Centralized `GlobalExceptionHandler` returning consistent error responses with appropriate HTTP status codes.
 
 - **Scalability & Deployment**
-  - Stateless JWT authentication for easy horizontal scaling.
+  - Stateless JWT authentication for easy horizontal scaling behind load balancers.
   - Database migrations and seed data managed via Flyway, suitable for CI/CD and multi-environment setups.
+  - Redis-backed caching to reduce database load for common read paths in production.
 
 ---
 
@@ -189,6 +217,7 @@ src/main/java/com/aditi/backendcapstoneproject/
   - `GET /products/search`
   - `GET /products/by-category`
   - `GET /categories`
+  - `POST /payments/stripe/webhook`
   - API docs (Swagger/OpenAPI) endpoints if enabled (e.g. `/swagger-ui/**`, `/v3/api-docs/**`).
 - **Protected endpoints**: All cart, order, payment, profile, and most other APIs (require `Authorization: Bearer <token>`).
 - **Admin-only**:
@@ -261,6 +290,7 @@ Use this account to test admin-only operations (like order status updates). In a
 - Java 17+
 - MySQL 8.0+
 - Maven 3.6+
+- (Optional for local production-like runs) Redis 6+ for caching
 
 ### Database Setup (Local)
 
@@ -272,6 +302,22 @@ FLUSH PRIVILEGES;
 ```
 
 Update `application.properties` if you change database name/user/password.
+
+### Redis Setup (Local, Optional but Recommended)
+
+By default, the main profile is configured to use Redis as the cache provider:
+
+- `spring.cache.type=redis`
+- `spring.redis.host=${REDIS_HOST:localhost}`
+- `spring.redis.port=${REDIS_PORT:6379}`
+
+For a local Redis instance:
+
+```bash
+docker run --name redis -p 6379:6379 -d redis:7
+```
+
+Or point `REDIS_HOST` / `REDIS_PORT` to your cloud Redis instance (e.g., Azure Cache for Redis).
 
 ### Run the Application
 
@@ -297,6 +343,11 @@ By default, the app runs on `http://localhost:8080`.
   - `SPRING_DATASOURCE_USERNAME`
   - `SPRING_DATASOURCE_PASSWORD`
   - `JWT_SECRET`, `JWT_EXPIRATION` (optional overrides)
+  - **Redis (Azure Cache for Redis)**:
+    - `REDIS_HOST` = `<your-cache-name>.redis.cache.windows.net`
+    - `REDIS_PORT` = `6380` (TLS) *(or `6379` if you explicitly disabled TLS on the cache)*
+    - `REDIS_PASSWORD` = `<primary-or-secondary-access-key>`
+    - **Note**: This project is already configured to use TLS (`spring.redis.ssl=true`) and reads host/port/password from the variables above.
   - `PORT` is provided by Azure; `server.port` already respects it.
 - Custom domain: DNS (A/CNAME + TXT) pointed to App Service with managed certificate; live at `https://aditirawat.me`.
 - Swagger UI (live): `https://aditirawat.me/swagger-ui/index.html`
@@ -306,6 +357,13 @@ By default, the app runs on `http://localhost:8080`.
 ## Testing
 
 This project has both **unit tests (services)** and **integration tests (controllers)** using **JUnit 5, Mockito, Spring Boot Test, spring-security-test, H2**, and **JaCoCo** for coverage.
+
+The tests run under a dedicated **`test` profile** that:
+
+- Uses H2 in-memory database (no MySQL required for tests).
+- Disables Flyway (schema is generated automatically).
+- Switches caching to **simple in-memory cache** (`spring.cache.type=simple`) so **no Redis instance is required**.
+- Excludes Redis auto-configuration to avoid accidental connection attempts.
 
 ### Run All Tests
 
