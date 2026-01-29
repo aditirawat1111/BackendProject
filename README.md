@@ -343,11 +343,12 @@ By default, the app runs on `http://localhost:8080`.
   - `SPRING_DATASOURCE_USERNAME`
   - `SPRING_DATASOURCE_PASSWORD`
   - `JWT_SECRET`, `JWT_EXPIRATION` (optional overrides)
-  - **Redis (Azure Cache for Redis)**:
+  - **Redis (Azure Cache for Redis)** – required for cache hit/miss metrics and Redis-backed caching:
+    - **`SPRING_PROFILES_ACTIVE` = `prod`** – enables Redis cache; without this, the app uses in-memory cache and Redis is not used.
     - `REDIS_HOST` = `<your-cache-name>.redis.cache.windows.net`
     - `REDIS_PORT` = `6380` (TLS) *(or `6379` if you explicitly disabled TLS on the cache)*
     - `REDIS_PASSWORD` = `<primary-or-secondary-access-key>`
-    - **Note**: This project is already configured to use TLS (`spring.redis.ssl=true`) and reads host/port/password from the variables above.
+    - **Note**: This project uses TLS (`spring.redis.ssl=true`) and reads host/port/password from the variables above.
   - `PORT` is provided by Azure; `server.port` already respects it.
 - Custom domain: DNS (A/CNAME + TXT) pointed to App Service with managed certificate; live at `https://aditirawat.me`.
 - Swagger UI (live): `https://aditirawat.me/swagger-ui/index.html`
