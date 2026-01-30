@@ -2,8 +2,6 @@ package com.aditi.backendcapstoneproject.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +22,7 @@ import java.util.List;
 
 /**
  * Conditionally configures Redis only when spring.cache.type=redis.
- * 
+ *
  * This allows Redis to be enabled in production while keeping it disabled
  * (excluded) for local development with simple cache.
  * Provides RedisConnectionFactory, RedisCacheManager (so @Cacheable uses Redis),
@@ -32,7 +30,6 @@ import java.util.List;
  */
 @Configuration
 @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
-@EnableConfigurationProperties(RedisProperties.class)
 public class ConditionalRedisConfig {
 
     private static final List<String> CACHE_NAMES = List.of(
@@ -40,37 +37,33 @@ public class ConditionalRedisConfig {
         "fakestoreProductsById", "fakestoreProductsAll", "carts", "orders", "orderById", "payments"
     );
 
+    /**
+     * Explicit RedisConnectionFactory based purely on spring.redis.* properties.
+     * This avoids relying on RedisAutoConfiguration, which is excluded for local dev.
+     */
     @Bean
     @Primary
-    @SuppressWarnings("null")
-    public RedisConnectionFactory redisConnectionFactory(RedisProperties redisProperties) {
+    public RedisConnectionFactory redisConnectionFactory(
+            @Value("${spring.redis.host}") String host,
+            @Value("${spring.redis.port}") int port,
+            @Value("${spring.redis.password:}") String password,
+            @Value("${spring.redis.ssl:false}") boolean useSsl) {
+
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
-        String host = redisProperties.getHost();
-        if (host != null) {
-            config.setHostName(host);
-        } else {
-            config.setHostName("localhost"); // Default fallback
+        config.setHostName(host);
+        config.setPort(port);
+        if (password != null && !password.isBlank()) {
+            config.setPassword(password);
         }
-        config.setPort(redisProperties.getPort());
-        CharSequence password = redisProperties.getPassword();
-        if (password != null && password.length() > 0) {
-            config.setPassword(password.toString());
-        }
-        
-        // Configure Lettuce client with SSL support if enabled
-        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder = 
-            LettuceClientConfiguration.builder();
-        
-        // Set timeout if configured, default to 60 seconds
-        Duration timeout = redisProperties.getTimeout();
-        Duration commandTimeout = timeout != null ? timeout : Duration.ofSeconds(60);
-        builder.commandTimeout(commandTimeout);
-        
-        // Configure SSL if enabled
-        if (redisProperties.getSsl() != null && redisProperties.getSsl().isEnabled()) {
+
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder =
+            LettuceClientConfiguration.builder()
+                .commandTimeout(Duration.ofSeconds(60));
+
+        if (useSsl) {
             builder.useSsl();
         }
-        
+
         LettuceClientConfiguration clientConfig = builder.build();
         return new LettuceConnectionFactory(config, clientConfig);
     }
