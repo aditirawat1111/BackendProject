@@ -347,9 +347,12 @@ By default, the app runs on `http://localhost:8080`.
     - **`SPRING_PROFILES_ACTIVE` = `prod`** – enables Redis cache; without this, the app uses in-memory cache and Redis is not used.
     - `REDIS_HOST` = `<your-cache-name>.redis.cache.windows.net`
     - `REDIS_PORT` = `6380` (TLS) *(or `6379` if you explicitly disabled TLS on the cache)*
-    - `REDIS_PASSWORD` = `<primary-or-secondary-access-key>`
-    - **Note**: This project uses TLS (`spring.redis.ssl=true`) and reads host/port/password from the variables above.
+    - `REDIS_PASSWORD` = Primary or Secondary **access key** from Azure Portal → your Redis resource → **Access keys** (copy with no leading/trailing spaces).
+    - **If you see `WRONGPASS invalid username-password pair`**: (1) Re-copy the access key from Azure Portal (no spaces/newlines). (2) Try adding `REDIS_USERNAME` = `default` in App Settings. (3) Regenerate the key in the portal and update `REDIS_PASSWORD`.
+    - Optional: `REDIS_USERNAME` = `default` (only if WRONGPASS persists with password-only).
+    - **Note**: This project uses TLS (`spring.redis.ssl=true`) and trims host/password; it supports optional username for Redis 6+.
   - `PORT` is provided by Azure; `server.port` already respects it.
+- **Verifying Redis / caching without redis-cli**: Azure App Service and Cloud Shell often don’t have `redis-cli`. To confirm Redis is used: (1) In Azure Portal open your **Redis** resource → **Redis Console** (or **Advanced settings** → **Test**) and run `PING`; (2) Call your app’s `GET /products/{id}` twice – the first request may log a Hibernate query and cache PUT, the second should **not** log a Hibernate query (cache hit).
 - Custom domain: DNS (A/CNAME + TXT) pointed to App Service with managed certificate; live at `https://aditirawat.me`.
 - Swagger UI (live): `https://aditirawat.me/swagger-ui/index.html`
 

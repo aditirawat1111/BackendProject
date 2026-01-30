@@ -47,13 +47,19 @@ public class ConditionalRedisConfig {
             @Value("${spring.redis.host}") String host,
             @Value("${spring.redis.port}") int port,
             @Value("${spring.redis.password:}") String password,
+            @Value("${spring.redis.username:}") String username,
             @Value("${spring.redis.ssl:false}") boolean useSsl) {
 
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
-        config.setHostName(host);
+        config.setHostName(host != null ? host.trim() : "localhost");
         config.setPort(port);
+        // Trim password to avoid WRONGPASS from pasted spaces/newlines in Azure App Settings
         if (password != null && !password.isBlank()) {
-            config.setPassword(password);
+            config.setPassword(password.trim());
+        }
+        // Azure Cache for Redis (Redis 6+) can require username; use "default" if WRONGPASS with password-only
+        if (username != null && !username.isBlank()) {
+            config.setUsername(username.trim());
         }
 
         LettuceClientConfiguration.LettuceClientConfigurationBuilder builder =
