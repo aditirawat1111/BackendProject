@@ -296,28 +296,32 @@ Use this account to test admin-only operations (like order status updates). In a
 
 ```sql
 CREATE DATABASE CapstoneBackendProject;
-CREATE USER 'CapstoneBackendProject_user'@'localhost' IDENTIFIED BY 'aditimysql@11';
-GRANT ALL PRIVILEGES ON CapstoneBackendProject.* TO 'CapstoneBackendProject_user'@'localhost';
+CREATE USER 'your_local_user'@'localhost' IDENTIFIED BY 'your_secure_password';
+GRANT ALL PRIVILEGES ON CapstoneBackendProject.* TO 'your_local_user'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-Update `application.properties` if you change database name/user/password.
+Then set the following environment variables (in your IDE run configuration or shell):
+- `SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/CapstoneBackendProject`
+- `SPRING_DATASOURCE_USERNAME=your_local_user`
+- `SPRING_DATASOURCE_PASSWORD=your_secure_password`
 
-### Redis Setup (Local, Optional but Recommended)
+### Redis Setup (Local, Optional)
 
-By default, the main profile is configured to use Redis as the cache provider:
+By default, the main profile uses **simple in-memory cache** (no Redis required):
 
-- `spring.cache.type=redis`
-- `spring.redis.host=${REDIS_HOST:localhost}`
-- `spring.redis.port=${REDIS_PORT:6379}`
+- `spring.cache.type=simple`
 
-For a local Redis instance:
+For production (Azure), Redis is enabled via the `prod` profile (`SPRING_PROFILES_ACTIVE=prod`).
+
+If you want to test with Redis locally, run a Redis instance and set:
+- `SPRING_CACHE_TYPE=redis`
+- `REDIS_HOST=localhost`
+- `REDIS_PORT=6379`
 
 ```bash
 docker run --name redis -p 6379:6379 -d redis:7
 ```
-
-Or point `REDIS_HOST` / `REDIS_PORT` to your cloud Redis instance (e.g., Azure Cache for Redis).
 
 ### Run the Application
 
